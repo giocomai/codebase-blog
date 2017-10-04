@@ -44,7 +44,7 @@ Looking at it, you may have wondered: "but what about this other word?"
 
 Wonder no more! Now, it's easy to find out through an interactive version of the same graph. You can insert comma-separated words to create your own circle plot based on #SOTEU speeches. As for the original graph, common stopwords (e.g. "and", "or", etc.) and self-referential terms ("european", "commission", etc.) have been excluded. Terms should all be lower-case, and to facilitate meaningful comparisons this interactive defaults to *&ast;term&ast;*, so the results of "example" would correspond to the the sum of occurrences of "example" and "examples". ^[This is mostly what you want, but beware, in particular with short words: "eco" would present the sum of all occurrences of "economic", "ecologic", etc.]
 
-<iframe src="https://apps.europeandatajournalism.eu/SoteuCircles/", width="660" height="660" frameBorder="0"></iframe>
+<iframe src="https://apps.europeandatajournalism.eu/SoteuCircles/" width="660" height="660" frameBorder="0"></iframe>
 
 ## Thematic wordclouds
 
@@ -71,4 +71,4 @@ speeches_by_sentence %>%
 
 But hey, what if you're interested in some other keywords? There you go. You may want to try *russia*, *balkan*, or whatever you are interested in.
 
-<iframe src="https://apps.europeandatajournalism.eu/SoteuThematicWordclouds/", width="660" height="660" frameBorder="0"></iframe>
+<iframe src="https://apps.europeandatajournalism.eu/SoteuThematicWordclouds/" width="660" height="660" frameBorder="0"></iframe>

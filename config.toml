@@ -1,4 +1,4 @@
-baseurl = "/"
+baseurl = "https://codebase.giorgiocomai.eu/"
 languageCode = "en-us"
 title = "The code behind the visuals"
 theme = "hugo-lithium-theme"

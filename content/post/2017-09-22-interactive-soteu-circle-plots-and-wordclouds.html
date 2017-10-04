@@ -1,0 +1,38 @@
+---
+title: 'Interactive #SOTEU circle plots and wordclouds'
+author: Giorgio Comai
+date: '2017-09-22'
+slug: interactive-soteu-circle-plots-and-wordclouds
+categories:
+  - rstats
+  - interactive
+  - shiny
+tags: []
+---
+
+
+
+<p>In <a href="../../13/exploring-soteu-speeches">a previous post</a>, I described how I created the data visualisations that have been published by <a href="https://euobserver.com/institutional/138997">EUobserver</a>, <a href="http://www.voxeurop.eu/en/2017/state-european-union-speech-5121369">VoxEurope</a>, and <a href="https://www.balcanicaucaso.org/eng/Areas/Europe/Counting-the-words-that-count-182535">balcanicaucaso.org</a>.</p>
+<p>Some of the graphs were based on keywords selected by the editors, such as for example this graph:</p>
+<p><img src="/post/2017-09-22-interactive-soteu-circle-plots-and-wordclouds_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>Looking at it, you may have wondered: “but what about this other word?”</p>
+<div id="interactive-version-of-the-circle-plot" class="section level2">
+<h2>Interactive version of the circle plot</h2>
+<p>Wonder no more! Now, it’s easy to find out through an interactive version of the same graph. You can insert comma-separated words to create your own circle plot based on #SOTEU speeches. As for the original graph, common stopwords (e.g. “and”, “or”, etc.) and self-referential terms (“european”, “commission”, etc.) have been excluded. Terms should all be lower-case, and to facilitate meaningful comparisons this interactive defaults to <em>*term*</em>, so the results of “example” would correspond to the the sum of occurrences of “example” and “examples”. <a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<iframe src="http://cloud.giorgiocomai.eu:3838/SoteuCircles/" , width="660" height="660" frameBorder="0">
+</iframe>
+</div>
+<div id="thematic-wordclouds" class="section level2">
+<h2>Thematic wordclouds</h2>
+<p>The final version of the graphs published included a number of wordclouds, but not a type of wordcloud that I thought was particularly interesting. A wordcloud based on all the words found in the same sentence as a given keyword. For example, what words are found in the same sentence as “crisis”?</p>
+<p><img src="/post/2017-09-22-interactive-soteu-circle-plots-and-wordclouds_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>But hey, what if you’re interested in some other keywords? There you go. You may want to try <em>russia</em>, <em>balkan</em>, or whatever you are interested in.</p>
+<iframe src="http://cloud.giorgiocomai.eu:3838/SoteuThematicWordclouds/" , width="660" height="660" frameBorder="0">
+</iframe>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>This is mostly what you want, but beware, in particular with short words: “eco” would present the sum of all occurrences of “economic”, “ecologic”, etc.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>

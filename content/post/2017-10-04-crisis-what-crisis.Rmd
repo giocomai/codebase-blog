@@ -1,0 +1,302 @@
+---
+title: Crisis? What Crisis?
+author: Giorgio Comai
+date: '2017-10-04'
+categories:
+  - interactive
+  - rstats
+tags:
+  - EU Commission
+  - European Union
+slug: crisis-what-crisis
+---
+
+```{r setup, echo = FALSE, message=FALSE}
+if (!require("pacman")) install.packages("pacman") # for taking care of package installation/loading
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+pacman::p_load("tidyverse")  # data processing
+pacman::p_load("tidytext")  # converting textual dataset to tidy data frame
+pacman::p_load("lubridate") # date handling
+pacman::p_load("devtools")  # install packages from GitHub
+pacman::p_load("htmlwidgets") # store interactive as separate html and embed with iframe
+pacman::p_load("widgetframe") # store interactive as separate html and embed with iframe
+devtools::install_github(repo = "giocomai/castarter", ref = "development") # content analysis starter toolkit package, developed by yours truly (under development)
+library("castarter")
+pacman::p_load("highcharter")  # interactive graphs
+devtools::install_github("hrbrmstr/streamgraph") # interactive steam graphs
+library("streamgraph")
+pacman::p_load("plotly")  # interactive graphs
+pacman::p_load("scales") # better labels for static graphs
+pacman::p_load("tidyquant")  # time series
+devtools::install_github('rstudio/DT')  # print better tables (development version needed for correct caption positioning)
+library("DT")
+```
+
+
+Looking at the archive of press releases and speeches published by the European Commission since 1985, it appears clearly that "crisis" entered the public vocabulary suddenly in 2008 and has quickly become a central keyword of public discourse, including that of EU institutions. ^[All the graphs in this post are based on a textual dataset created by extracting all press releases, statements, speeches, and announcements issued between January 1985 and 18 September 2017 and currently available in the <a href="http://europa.eu/rapid/search.htm">online archive of the European Commission</a> (55,439 items in total). The script used to generate this dataset is <a href="https://gist.github.com/giocomai/e4138290a74eaf94ffc267a90b9998c9">available on GitHub</a>.]
+
+```{r}
+dataset <- bind_rows(readRDS(file = file.path("..", "..", "static", "EuropeanCommission_Archive", "dataset1.rds")),
+                             readRDS(file = file.path("..", "..", "static", "EuropeanCommission_Archive", "dataset2.rds"))) #load dataset created with this: https://gist.github.com/giocomai/e4138290a74eaf94ffc267a90b9998c9
+
+## clean up texts
+dataset$contents <- stringr::str_replace_all(string = dataset$contents, pattern = stringr::regex("Press contacts:.*"), replacement = "")
+dataset$contents <- stringr::str_replace_all(string = dataset$contents, pattern = stringr::regex("For More Information.*", ignore_case = TRUE), replacement = "")
+# to fix toeknization when dot not followed by space
+dataset$contents <- stringr::str_replace_all(string = dataset$contents, pattern = stringr::fixed("."), replacement = ". ")
+
+
+crisisDF <- castarter::ShowRelativeTS(terms = c("crisis"), dataset = dataset, type = "data.frame", rollingAverage = 91) # calculate relative word frequency 
+
+```
+
+
+```{r hc_crisisFullTS, message=FALSE, echo=FALSE}
+
+hc_crisisFullTS <- highchart(type = "stock") %>%
+  hc_title(text = "Word frequency of 'crisis' in press releases issued by the EU commission (1985-2017)") %>%
+  hc_credits(enabled = TRUE, text = "*91 days rolling average") %>%
+  hc_exporting(enabled = TRUE) %>%
+  hc_xAxis(title = "") %>%
+  hc_yAxis(title = "") %>% 
+  hc_add_series(name = "Word frequency", data = crisisDF %>% tidyquant::as_xts(date_col = Date), id = "crisis")
+
+widgetframe::frameWidget(hc_crisisFullTS)
+```
+
+
+*Embed code:*
+```{r echo=TRUE, eval = FALSE}
+<iframe src="https://datavis.europeandatajournalism.eu/obct/giocomai/post/2017-10-04-crisis-what-crisis_files/figure-html/widgets/widget_hc_crisisFullTS.html" style="width:100%;height:500px;border:none;"></iframe>
+```
+
+Zooming in on recent years, it appears clearly that the frequency of mentions to 'crisis' boomed starting with September 2008 and attenuated somewhat in the spring of 2016. The first dotted line in the graph below refers to 15 September 2008 (the day when Lehman Brothers filed for bankruptcy), the second is arbitrarily set at 1 September 2016, around the time when the frequency of mentions decreased substantially. It is worth mentioning, however, that even after this date, 'crisis' is still much more frequently mentioned than before 2008. 
+
+
+```{r crisisTS_1985_2017}
+crisisDF %>% ggplot2::ggplot(mapping = ggplot2::aes(x = Date, y = crisis)) +
+  ggplot2::geom_line(size = 1) +
+  ggplot2::scale_y_continuous(name = "", labels = scales::comma) +
+  ggplot2::scale_x_date(name = "") + 
+  ggplot2::expand_limits(y = 0) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(legend.title = ggplot2::element_blank()) + 
+  ggplot2::scale_color_brewer(type = "qual", palette = 6) +
+  ggplot2::geom_vline(xintercept = c(as.numeric(as.Date("2008-09-15"))), linetype = 2) +
+  ggplot2::geom_vline(xintercept = c(as.numeric(as.Date("2016-09-01"))), linetype = 2) +
+  ggplot2::labs(title = paste("Frequency of 'crisis' in press releases issued by the European Commission"),
+                caption = paste0("Calculated on a ", 91, "-days rolling average"))
+```
+[*Download this graph*](../../../../post/2017-10-04-crisis-what-crisis_files/figure-html/crisisTS_2007_2017-1.png)
+
+```{r crisisTS_2007_2017}
+crisis_gg_post2007 <- crisisDF %>% filter(Date > as.Date("2007-01-01"))%>%
+  ggplot2::ggplot(mapping = ggplot2::aes(x = Date, y = crisis)) +
+  ggplot2::geom_line(size = 1) +
+  ggplot2::scale_y_continuous(name = "", labels = scales::comma) +
+  ggplot2::scale_x_date(name = "") + 
+  ggplot2::expand_limits(y = 0) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(legend.title = ggplot2::element_blank()) + 
+  ggplot2::scale_color_brewer(type = "qual", palette = 6) +
+  ggplot2::geom_vline(xintercept = c(as.numeric(as.Date("2008-09-15"))), linetype = 2) +
+  ggplot2::geom_vline(xintercept = c(as.numeric(as.Date("2016-09-01"))), linetype = 2) +
+  ggplot2::labs(title = paste("Frequency of 'crisis' in press releases issued by the European Commission"),
+                subtitle = ("2007-2017"),
+                caption = paste0("Calculated on a ", 91, "-days rolling average"))
+
+crisis_gg_post2007
+```
+[*Download this graph*](../../../../post/2017-10-04-crisis-what-crisis_files/figure-html/crisisTS_2007_2017-1.png)
+
+## 8 years of crisis - but what crisis?
+
+Here's a list of all the types of *crisis* that have been mentioned in press releases issued by the European Commission at least 10 times since 1985.
+
+```{r dt_typesOfCrisis}
+datasetBigrams <- dataset %>%  filter(stringr::str_detect(string = contents, pattern = "crisis")) %>%  select(date, contents) %>% unnest_tokens(bigram, contents, token = "ngrams", n = 2) %>%  filter(stringr::str_detect(pattern = "crisis", string = bigram)) %>% # removing bigrams with stopwords
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) 
+
+dt_typesOfCrisis <-
+  datatable(datasetBigrams %>% 
+              filter(word2=="crisis") %>% 
+              count(word1, word2, sort = TRUE) %>%
+              filter(n>10) %>% 
+              rename(`Word preceding crisis` = word1, crisis = word2),   caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+     htmltools::em('What crisis? Number of occurrences of each type of crisis in all press releases and statements issued by the European Commission between 1985 and 2017')), 
+    options = list(
+      pageLength = 5, lengthMenu = c(5, 10, 15, 20)),
+    fillContainer = FALSE) 
+
+widgetframe::frameWidget(targetWidget = dt_typesOfCrisis, height = 400)
+```
+
+*Embed code:*
+```{r echo=TRUE, eval = FALSE}
+<iframe src="https://datavis.europeandatajournalism.eu/obct/giocomai/post/2017-10-04-crisis-what-crisis_files/figure-html/widgets/widget_dt_typesOfCrisis.html" style="width:100%;height:600px;border:none;"></iframe>
+```
+
+That's a lot of different types of crisis. Some of them are by far the most frequently mentioned (e.g. 'economic crisis'), others are now not any more of concern ('BSE crisis', related to the so called "mad cow" disease). Here's a graph showing the most frequently mentioned types of crisis.
+
+### Types of crisis
+
+```{r hc_totalCrisisBarchart}
+
+data <- datasetBigrams %>%
+  filter(word2=="crisis") %>% 
+  count(word1, word2) %>% 
+  mutate(word1 = if_else(n>50, true = word1, false = "Other")) %>% 
+  group_by(word1) %>% 
+  tally(wt = n) %>% 
+  arrange(desc(nn)) %>%
+  mutate(word1 = forcats::fct_inorder(word1)) %>% 
+  mutate(word1 = forcats::fct_relevel(word1, "Other", after = Inf)) %>%
+  filter(word1!="Other")
+
+hc_totalCrisisBarchart <- 
+  highchart() %>% 
+  hc_chart(type = "bar") %>% 
+  hc_xAxis(categories = data$word1) %>% 
+  hc_add_series(name = "Number of occurrences", data = data$nn) %>%
+  hc_title(text = "What crisis?") %>% 
+  hc_subtitle(text = "Types of crisis by number of mentions in press releases issued by the European Commission (1985-2017)") 
+
+widgetframe::frameWidget(targetWidget = hc_totalCrisisBarchart, height = 500)
+```
+
+*Embed code:*
+```{r echo=TRUE, eval = FALSE}
+<iframe src="https://datavis.europeandatajournalism.eu/obct/giocomai/post/2017-10-04-crisis-what-crisis_files/figure-html/widgets/widget_hc_totalCrisisBarchart.html" style="width:100%;height:500px;border:none;"></iframe>
+```
+
+There's good reason to believe that different crises were prominent at different times, and indeed, this appears clearly from the following graph based on the number of mentions per year of the most common types of crisis. 
+
+
+```{r d3_steamGraph_crisis}
+#http://hrbrmstr.github.io/streamgraph/
+
+ crisis50plus <- datasetBigrams %>%
+  filter(word2=="crisis") %>% 
+  count(word1, word2) %>% 
+  filter(n>50) %>% 
+  select(word1)
+
+
+crisis50plusFiltered <- crisis50plus %>% filter(word1!="current"&word1!="ongoing"&word1!="post"&word1!="pre"&word1!="recent")
+
+d3_steamGraph_crisis <- 
+  datasetBigrams %>%
+  mutate(word1 = stringr::str_replace_all(string = word1, pattern = "syrian", replacement = "syria")) %>% # merge 'syria' and 'syrian'
+  filter(word2=="crisis") %>% #keep only bigrams where 'crisis' is the second word
+  filter(is.element(set = crisis50plusFiltered$word1, el = word1)) %>% # keep only types of crises found more than 50 times for clarity
+  mutate(year = lubridate::year(date)) %>% # make year the unit of time
+  group_by(year) %>% 
+  count(word1, word2) %>% 
+  streamgraph("word1", "n", "year", offset="zero", interpolate="cardinal") %>%
+  sg_legend(show=TRUE, label="Type of crisis: ") %>% 
+  sg_axis_x(tick_interval = 2)
+
+#%>%  sg_title(title = "Number of mentions of various types of 'crisis' in press releases issued by the European Commission")
+
+widgetframe::frameWidget(targetWidget = d3_steamGraph_crisis, height = 500)
+
+```
+
+*Embed code:*
+```{r echo=TRUE, eval = FALSE}
+<iframe src="https://datavis.europeandatajournalism.eu/obct/giocomai/post/2017-10-04-crisis-what-crisis_files/figure-html/widgets/widget_d3_steamGraph_crisis.html" style="width:100%;height:500px;border:none;"></iframe>
+```
+
+
+```{r hc_motion_crisis, eval=FALSE}
+# testing animated version of the graph, eventually left out of the post
+
+datasetBigramsByYear <- datasetBigrams %>%
+  filter(word2=="crisis") %>% #keep only bigrams where 'crisis' is the second word
+   filter(is.element(set = crisis50plusFiltered$word1, el = word1)) %>% # keep only types of crises found more than 50 times for clarity
+  mutate(year = lubridate::year(date)) %>% # make year the unit of time
+  group_by(year) %>%
+  count(word1, word2) %>%
+  select(-word2) %>% spread(word1, n) %>% 
+  filter(year>2006)
+
+datasetBigramsByYear
+
+hc_motion_crisis <- 
+  highchart() %>%
+  hc_chart(type = "bar") %>%
+  hc_xAxis(categories = c("economic", "financial", "debt", "syrian", "refugee")) %>%
+  hc_yAxis(min = 0, max = 600) %>% 
+  hc_add_series(name = "Number of occurrences", data = list(
+    list(sequence = datasetBigramsByYear$economic), 
+    list(sequence = datasetBigramsByYear$financial),
+    list(sequence = datasetBigramsByYear$debt),
+    list(sequence = datasetBigramsByYear$syrian),
+    list(sequence = datasetBigramsByYear$refugee)
+  )) %>%
+  hc_title(text = "What crisis?") %>%
+  hc_subtitle(text = "Types of crisis by number of mentions in press releases issued by the European Commission (2007-2017)") %>%
+  hc_motion(enabled = TRUE, labels =datasetBigramsByYear$year) 
+
+# hc_colors(colors = c("#fee08b", "#e6f598", "#fdae61")) %>% 
+
+widgetframe::frameWidget(targetWidget = hc_motion_crisis, height = 500)
+
+
+```
+
+
+There is another trend that clearly emerges from this graph: at least in its public discourse, the European Commission is leaving all types of crisis behind. Even the expression 'economic crisis', omnipresent until recently, barely appears any more. ^[Unlike the previous timelines, this graph is based on the absolute number of mention, not relative frequency. As a consequence, and expecting that EU commissioners will talk of *crisis* between today and the end of the year, the downward trend will likely be slightly less steep than it appears at this stage.]
+
+## Yes, but what was it all about?
+
+These are numbers, and obviously tell only part of the story. But if you are interested in what was actually being said about it... pick your crisis, and find out more by reading the original quotes.
+
+*N.B. The first search box allows to search among types of crisis. The second search box on the right allows to filter by a second keyword within the results.*
+
+```{r include=FALSE, eval=FALSE}
+# creating the dataset used in interactive shiny app below
+crisisBySentence <-  dataset %>%
+                #filter(date>as.Date("1999-12-31")) %>%
+                filter(stringr::str_detect(string = contents,
+                                           pattern = stringr::regex("crisis", ignore_case = TRUE))) %>%
+  select(date, title, contents, link) %>%
+  unnest_tokens(sentence, contents, token = "sentences" ,to_lower = FALSE) %>%
+  filter(stringr::str_detect(pattern = stringr::regex("crisis",
+                                                      ignore_case = TRUE), string = sentence))
+
+saveRDS(object = crisisBySentence, file = "crisisBySentence.rds")
+
+```
+
+<iframe src="https://apps.europeandatajournalism.eu/EUcommissionCrisisQuotes/" style="width:100%;height:680px;border:none;"></iframe>
+
+
+## Life beyond crisis?
+
+This post was focused on crisis. But what else has the Commission been talking about through all these years? Well, agriculture, for example. And certainly not terrorism, which was barely even mentioned before 2001. 
+
+```{r agricultureTerrorRefugeeTS_1985_2017}
+castarter::ShowRelativeTS(terms = as.character(tolower(trimws(stringr::str_split(string = 'terror, refugee, agricultur', pattern = ",", simplify = TRUE)))),
+                          dataset = dataset,
+                          type = "graph",
+                          rollingAverage = 365
+) + labs(title = paste("Frequency of", paste(sQuote(as.character(tolower(trimws(stringr::str_split(string = 'terror*, refugee*, agricultur*', pattern = ",", simplify = TRUE))))), collapse = ", "), "in press releases issued\nby the EU commission"), subtitle = paste("Based on", scales::comma(nrow(dataset)), "press releases and speeches published by the EU commission between 1985 and 2017"))
+
+```
+[*Download this graph*](../../../../post/2017-10-04-crisis-what-crisis_files/figure-html/agricultureTerrorRefugeeTS_1985_2017-1.png)
+
+If you're curious about the frequency of other terms, you can test your hypotheses by inputting any term in the [interactive graph available at this link](https://apps.europeandatajournalism.eu/EUcommissionArchive/).
+
+
+## Source code and terms of use.
+
+The source code of this post is [available in full on GitHub](https://github.com/giocomai/edjnet-blog/blob/master/content/post/2017-10-04-crisis-what-crisis.Rmd).
+
+All of the contents of this blog, including graphs and code, are distributed under a [Creative Commons license (BY)](https://creativecommons.org/licenses/by/4.0/). In brief, you can use and adapt all of the above as long you acknowledge the source: Giorgio Comai/OBC Transeuropa/#edjnet 
+Feel free to embed the interactive graphs above in your own website or blog. 

@@ -99,7 +99,7 @@ firstTweet_profile_GG
 # How much do they tweet?
 
 It is important to higlight that Twitter limits the ability to retrieve older tweets. More specifically, it allows to retrieve systematically the latest 3,200 tweets for each user. This is substantial, but not enough to cover all of the Twitter history of the most prolific MEP twitterati. More precisely, as of October 2017 `r readRDS(file = file.path("..", "..", "static",
-"TwitterMEP", "MEPsProfiles.rds")) %>% select(statuses_count) %>% filter(statuses_count>3200) %>% nrow()` MEPs have tweeted more than 3,200 times. As of October 2017, this means that it is possible to retrieve the full Twitter history of all MEPs effectively only for the last six months, and that the most frequent tweeters are left out of calculations.
+"TwitterMEP", "MEPsProfiles.rds")) %>% select(statuses_count) %>% filter(statuses_count>3200) %>% nrow()` MEPs have tweeted more than 3,200 times. As of October 2017, this means that it is possible to retrieve the full Twitter history of all MEPs effectively only for the last few weeks, and that the most frequent tweeters are left out of calculations for previous periods.
 
 As a consequence, in terms of the current analsyis, the graph above should rather look as follows:
 
@@ -118,6 +118,7 @@ firstTweet <- full_join(
 ,
   allMEPfull %>%
   group_by(screen_name) %>% 
+  #add_count() %>% filter(n>10) %>% select(-n) %>% 
   slice(which.min(date)) %>% 
   ungroup() %>% 
   select(screen_name, date) %>% 

@@ -88,7 +88,8 @@ firstTweet_profile_GG <- firstTweet %>%
   ggplot2::geom_vline(xintercept =
                         as.numeric(as.Date(c("2014-05-25", "2009-06-07"))),
                       linetype = 2) +
-  labs(title = "Number of current MEPs on Twitter")
+  labs(title = "Number of current MEPs on Twitter")  +
+    theme(legend.position="bottom")
 
 firstTweet_profile_GG
 # 
@@ -144,7 +145,8 @@ firstTweet_available_GG <- firstTweet %>%
   ggplot2::geom_vline(xintercept =
                         as.Date(c("2014-05-25", "2009-06-07")),
                       linetype = 2) +
-  labs(title = "Number of current MEPs on Twitter")
+  labs(title = "Number of current MEPs on Twitter") +
+    theme(legend.position="bottom")
 firstTweet_available_GG
 # 
 # widgetframe::frameWidget(plotly::ggplotly(firstTweet_available_GG))

@@ -1,0 +1,258 @@
+---
+title: Meet the European Parliament's twittersphere
+author: Giorgio Comai
+date: '2017-10-18'
+slug: meet-the-european-parliament-s-twittersphere
+categories:
+  - twitter
+  - rstats
+tags:
+  - European Union
+  - European Parliament
+---
+
+```{r setup, include=FALSE, echo=TRUE, message=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, cache=TRUE)
+if (!require("pacman")) install.packages("pacman") # for package installation/loading
+pacman::p_load("tidyverse")  # data processing
+pacman::p_load("tidytext") # transforming text into tidy data frames
+pacman::p_load("zoo") # time series
+pacman::p_load("lubridate") # date transformations
+pacman::p_load("knitr") # rendering this document
+pacman::p_load("ggridges") # ridgeline plots 
+pacman::p_load("plotly") # interactive graphs
+pacman::p_load("widgetframe") #embedding
+# pacman::p_load("ggiraph") # ggplot to htmlwidget
+
+```
+
+```{r}
+allMEPfull <- readRDS(file = file.path("..", "..", "static",
+"TwitterMEP", "allMEPfull.rds"))  %>% mutate(date = as.Date(created_at)) %>%
+filter(date<as.Date("2017-10-16"))
+```
+This is the first in a series of posts on how members of the European Parliament (MEPs) appear on Twitter. The first post will introduce the EP twittersphere and point at outline some curious facts. The following posts will focus on specific aspects.
+
+The dataset of tweets at the base of this and the following posts consists of the whole Twitter history of the current MEPs made available via the Twitter API `r scales::comma(nrow(allMEPfull))` tweets (yes, more than one million tweets).^[The code used to create the dataset is <a href="https://gist.github.com/giocomai/ea5fa8bd0732728abc05befedf8a2ac7">available on GitHub</a> An updated list of all MEPs with a Twitter account is available on <a href="https://github.com/eliflab/European-Parliament-Open-Data">GitHub, courtesy of Eliflab</a>.]
+
+
+## How many are actually on Twitter?
+
+The vast majority of MEPs is currently on Twitter (more than 600 out of 751 MEPs). Only few joined in the early years of the platform, and electoral campaigns seems to serve as an encouragement for MEP to sign up to social media platforms in order to reach a wider audience. Small "bumps" in the total numbers of current MEPs on Twitter is visible both before the EP elections in June 2009, and the latest in May 2014.^[Again, keep in mind that these data refer to the number of *current* MEPs on Twitter: some of them were likely candidate also in 2009, but many weren't.] 
+
+```{r firstTweet_dataset, eval=FALSE}
+firstTweet <- 
+  allMEPfull %>%
+  group_by(screen_name) %>% 
+  slice(which.min(date)) %>% 
+  ungroup() %>% 
+  select(date) %>% 
+  count(date) %>% 
+  dplyr::full_join(tibble(date = seq.Date(from = min(allMEPfull$date, na.rm = TRUE), to = max(allMEPfull$date, na.rm = TRUE), by = "day")), by = "date") %>%
+  dplyr::arrange(date)
+  
+ firstTweet$MEPsOnTwitter <- purrr::map_int(.x = firstTweet$date, .f = function(x) sum(firstTweet$n[firstTweet$date<x], na.rm = TRUE))
+
+ggplot(data = firstTweet,
+       mapping = aes(x = date, y = MEPsOnTwitter)) +
+  geom_area() +
+  scale_y_continuous("") +
+  scale_x_date(name = "") +
+  theme_minimal() +
+  ggplot2::geom_vline(xintercept =
+as.numeric(as.Date(c("2014-05-25", "2009-06-07"))), linetype = 2)
+
+```
+
+```{r firstTweet_profile}
+
+firstTweet <- readRDS(file = file.path("..", "..", "static",
+"TwitterMEP", "MEPsProfiles.rds")) %>%
+  mutate(date = as.Date(created_at)) %>% 
+  group_by(date) %>% 
+  count()
+
+firstTweet$`On Twitter` <- purrr::map_int(.x = firstTweet$date, .f = function(x) sum(firstTweet$n[firstTweet$date<x], na.rm = TRUE))
+firstTweet$`Not on Twitter` <- 751 - firstTweet$`On Twitter`
+
+firstTweet_profile_GG <- firstTweet %>%
+  select(-n) %>%
+  gather(`On Twitter?`, Number, c(`On Twitter`, `Not on Twitter`)) %>% 
+  ggplot(mapping = aes(x = date, y = Number, fill = `On Twitter?`)) +
+  geom_area() +
+  scale_y_continuous("") +
+  scale_x_date(name = "") +
+  scale_fill_brewer(type = "qual", palette = 3) +
+  theme_minimal() +
+  ggplot2::geom_vline(xintercept =
+                        as.numeric(as.Date(c("2014-05-25", "2009-06-07"))),
+                      linetype = 2) +
+  labs(title = "Number of current MEPs on Twitter")
+
+firstTweet_profile_GG
+# 
+# widgetframe::frameWidget(plotly::ggplotly(firstTweet_profile_GG))
+```
+
+# How much do they tweet?
+
+It is important to higlight that Twitter limits the ability to retrieve older tweets. More specifically, it allows to retrieve systematically the latest 3,200 tweets for each user. This is substantial, but not enough to cover all of the Twitter history of the most prolific MEP twitterati. More precisely, as of October 2017 `r readRDS(file = file.path("..", "..", "static",
+"TwitterMEP", "MEPsProfiles.rds")) %>% select(statuses_count) %>% filter(statuses_count>3200) %>% nrow()` MEPs have tweeted more than 3,200 times. As of October 2017, this means that it is possible to retrieve the full Twitter history of all MEPs effectively only for the last six months, and that the most frequent tweeters are left out of calculations.
+
+As a consequence, in terms of the current analsyis, the graph above should rather look as follows:
+
+```{r firstTweet_available_GG}
+MEPsProfiles <- readRDS(file = file.path("..", "..", "static", "TwitterMEP", "MEPsProfiles.rds")) %>% mutate(date = as.Date(created_at)) %>% select(screen_name, date, statuses_count) 
+
+firstTweet <- full_join(
+  MEPsProfiles  %>%
+    filter(statuses_count>0) %>% 
+  arrange(date) %>% 
+  group_by(date) %>% 
+  add_count() %>%
+  distinct(date, n) %>% 
+  rename(n_profile = n) %>% 
+  full_join(tibble(date = seq.Date(from = min(MEPsProfiles$date, na.rm = TRUE), to = max(MEPsProfiles$date, na.rm = TRUE), by = "day")), by = "date")
+,
+  allMEPfull %>%
+  group_by(screen_name) %>% 
+  slice(which.min(date)) %>% 
+  ungroup() %>% 
+  select(screen_name, date) %>% 
+  group_by(date) %>% 
+  add_count() %>% 
+  ungroup() %>% 
+  distinct(date, n) %>% 
+  rename(n_dataset = n) %>% 
+  full_join(tibble(date = seq.Date(from = min(MEPsProfiles$date, na.rm = TRUE), to = max(MEPsProfiles$date, na.rm = TRUE), by = "day")), by = "date"), by = "date") %>% arrange(date)
+
+firstTweet$`On Twitter` <- purrr::map_int(.x = firstTweet$date, .f = function(x) sum(firstTweet$n_profile[firstTweet$date<x], na.rm = TRUE))
+firstTweet$`On Twitter, and tweets available` <- purrr::map_int(.x = firstTweet$date, .f = function(x) sum(firstTweet$n_dataset[firstTweet$date<x], na.rm = TRUE))
+firstTweet$`On Twitter, and tweets unavailable` = firstTweet$`On Twitter`-firstTweet$`On Twitter, and tweets available`
+firstTweet$`Not on Twitter` <- 751 - firstTweet$`On Twitter`
+
+firstTweet_available_GG <- firstTweet %>%
+  gather(`On Twitter?`, Number, c(`On Twitter, and tweets available`, `On Twitter, and tweets unavailable`, `Not on Twitter`)) %>%
+  mutate(`On Twitter?` = factor(x = `On Twitter?`, levels = c("Not on Twitter", "On Twitter, and tweets unavailable", "On Twitter, and tweets available"))) %>% 
+  ggplot(mapping = aes(x = date, y = Number, fill = `On Twitter?`)) +
+  geom_area() +
+  scale_y_continuous("") +
+  scale_x_date(name = "") +
+  scale_fill_brewer(type = "seq", palette = 1) +
+  theme_minimal() +
+  ggplot2::geom_vline(xintercept =
+                        as.Date(c("2014-05-25", "2009-06-07")),
+                      linetype = 2) +
+  labs(title = "Number of current MEPs on Twitter")
+firstTweet_available_GG
+# 
+# widgetframe::frameWidget(plotly::ggplotly(firstTweet_available_GG))
+```
+
+# Hints from incomplete data
+
+As a consequence of the limits imposed by Twitter on the possibility to systematically retrieve older tweets, analyses on the pre-April 2017 period are based on incomplete data, i.e. tweets by those MEPs who tweet less frequently. In spite of this substantial limitation, the following graphs still point at some trends that can be observed at least among those MEPs who post less frequently.
+
+```{r allTweetsBlue_gg}
+allTweetsBlue <- allMEPfull  %>%
+  group_by(date) %>%
+  tally() %>% # Include missing date, if no item on a given date
+  dplyr::full_join(tibble(date = seq.Date(from = min(allMEPfull$date, na.rm = TRUE), to = max(allMEPfull$date, na.rm = TRUE), by = "day")), by = "date") %>% dplyr::arrange(date) %>%
+replace_na(replace = list(n = 0)) %>%
+  mutate(rollingN = zoo::rollmean(x = n, 31, fill = NA)) %>%
+  tidyr::drop_na()
+
+allTweetsBlue_gg <-  allTweetsBlue %>% ggplot(mapping = aes(x = date, y =
+rollingN, fill = "blue")) + geom_area(show.legend = FALSE) + ggplot2::geom_vline(xintercept =
+c(as.numeric(as.Date("2014-05-25"))), linetype = 2) +
+  scale_y_continuous(name =
+"Tweets per day") +
+  scale_x_date("") +
+  scale_fill_brewer(type = "qual", palette = 3) +
+  labs(title = "Number of tweets posted by all current MEP per day", subtitle = "The dotted line presents the final day of the latest European Parliament elections", caption = "*Calculated on a 31 days rolling average for clarity") + theme_minimal()
+
+allTweetsBlue_gg
+#widgetframe::frameWidget(plotly::ggplotly(allTweetsBlue_gg))
+```
+
+The graph shows a noticeable peak immediately preceeding the European Parliament elections in May 2014, as well as seasonal variations highlighting periods of lower and higher activity .
+
+As appears more clearly from the following ridgeline graph, that includes yearly-adjusted data starting only with 2014, the seasonal trends can easily be explained: MEPs collectively tweet less in the summer (and in August in particular), as they do in the weeks around the new year.
+
+```{r MEPyearlyRidge_gg}
+#allTweetsRidge <- allTweetsBlack %>% mutate(month =
+# lubridate::month(date), year = lubridate::year(date), day =
+# lubridate::yday(date)) %>% filter(year>2008) # %>% group_by(month) %>%
+# tally(month)
+
+allMEPfull %>%
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date),
+         day = lubridate::yday(date)) %>%
+  filter(year>2013) %>%
+  mutate(year = forcats::fct_rev(as.factor(year))) %>% ggplot(mapping = aes(x = day, y = year, fill=year)) + 
+  geom_density_ridges(scale = 3, show.legend = FALSE) +
+  theme_ridges() +
+  scale_x_continuous(name = "",
+                     breaks = c(1, yday("2017-04-01"), yday("2017-07-01"), yday("2017-10-01"), 365),
+                     labels = c("January", "April", "July", "October", "December")) +
+  scale_y_discrete(name = "") +
+  scale_fill_brewer(direction = 1)
+```
+
+The trend is overall consistent, with some exceptions. The first is in the Spring of 2014, and is quite obviously related to the electoral campaign before the 2014 EP elections. The second is less accentuated but still noticeable around September 2017. A different, more granular visualisation may provide clues, without even looking at the contents of the tweet (I'm keeping that for a following post).
+
+```{r calendar}
+Tweets_byDay <- 
+  allMEPfull  %>% 
+  group_by(date) %>%
+  tally() %>% 
+  complete(date) %>% 
+  # Include missing date, if no item on a given date
+  dplyr::full_join(tibble(date = seq.Date(from = min(allMEPfull$date, na.rm = TRUE), to = max(allMEPfull$date, na.rm = TRUE), by = "day")), by = "date") %>%
+  dplyr::arrange(date) %>% 
+  replace_na(replace = list(n = 0))
+
+first_day_of_month_wday <- function(dx) {
+  lubridate::day(dx) <- 1
+  lubridate::wday(dx)
+}
+
+
+# http://margintale.blogspot.in/2012/04/ggplot2-time-series-heatmaps.html
+# http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
+# adjusted and without plyr
+temp <- Tweets_byDay %>% 
+  filter(date>as.Date("2013-12-31")) %>% 
+  mutate(year = lubridate::year(date),month = lubridate::month(date)) %>% 
+  mutate(monthf = factor(month,levels=as.character(1:12), labels=c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"), ordered=TRUE)) %>% 
+  mutate(weekday = lubridate::wday(date)) %>% # as.POSIXlt(date)$wday
+  mutate(weekdayf = factor(weekday,levels=rev(1:7),labels=rev(c("Mon","Tue","Wed","Thu","Fri","Sat","Sun")),ordered=TRUE)) %>% 
+  mutate(yearmonth = as.yearmon(date)) %>% 
+  mutate(yearmonthf = factor(yearmonth)) %>% 
+  mutate(week = as.numeric(format(date,"%W"))) %>% 
+  mutate(monthweek = ceiling((lubridate::day(date) + first_day_of_month_wday(date) - 1) / 7)) %>% 
+  mutate(`Day of the month`= lubridate::mday(date)) %>% 
+  rename(`Tweets per day`= n, 
+         `Week of the month` = monthweek, 
+         `Day of the week` = weekdayf)
+
+
+calendar <- ggplot(temp, aes(x = `Week of the month`, y = `Day of the week`, fill = `Tweets per day`, label = `Day of the month`)) +
+  geom_tile(colour = "white") +
+  facet_grid(year~monthf) +
+  #scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1) +
+  scale_fill_distiller(type = "seq", palette = 1, direction = 1) +
+  labs(title = "When do MEPs tweet most?") +
+  xlab("Week of month") +
+  ylab("") + theme_minimal()
+plotly::ggplotly(p = calendar)
+```
+
+Besides the overall trend of growth in recent months, some dates pop up from this heatmap-based calendar. On top, comes a day in the third week of September 2017: it's 13 September, the day when Jean-Claude Juncker made his "State of the Union" speech, also known with the hashtag #SOTEU. Indeed, the heatmap shows that every year in September there is a day when MEP tweet most: #SOTEU time.
+
+# What next?
+
+This post scratched the surface of the EP twittersphere just looking at how much was tweeted at a given point in time. The next post will start to deal with the "who" question, and only later we'll finally loook at the contents.  
+

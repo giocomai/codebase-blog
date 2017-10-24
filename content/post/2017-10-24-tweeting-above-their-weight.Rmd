@@ -1,0 +1,306 @@
+---
+title: Tweeting above their weight
+author: Giorgio Comai
+date: '2017-10-24'
+slug: tweeting-above-their-weight
+categories:
+  - twitter
+  - European Parliament
+tags: []
+---
+
+```{r setup, include=FALSE, echo=TRUE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE)
+
+pacman::p_load("tidyverse")
+pacman::p_load("zoo")
+pacman::p_load("ggiraph")
+
+devtools::install_github("hrbrmstr/streamgraph")
+library("streamgraph")
+```
+
+```{r}
+
+allMEPfull <- readRDS(file = file.path("..", "..", "static",
+"TwitterMEP", "allMEPfull.rds"))  %>% mutate(date = as.Date(created_at)) %>%
+filter(date<as.Date("2017-10-16")) %>% filter(is.na(GROUP)==FALSE)
+
+groupShortName <- data_frame(Long = unique(allMEPfull$GROUP)[is.na(unique(allMEPfull$GROUP))==FALSE], Short = c("EPP", "EFDD", "Greens–EFA", "S&D", "GUE-NGL", "ENF", "ALDE", "ECR", "NI"))
+
+allMEPfull$GroupShort <- allMEPfull$GROUP
+
+for (i in seq_along(along.with = groupShortName$Long)) {
+  allMEPfull$GroupShort <- stringr::str_replace_all(string = allMEPfull$GroupShort, pattern = stringr::fixed(groupShortName$Long[i]), replacement = groupShortName$Short[i])
+}
+
+allMEPfull$GroupCombo <- paste0(allMEPfull$GROUP, " / ", allMEPfull$GroupShort)
+
+MEPsDF <- read_rds(file.path("..", "..", "static", "TwitterMEP", "MEPsDF.rds"))
+MEPsDF$GroupShort <- MEPsDF$GROUP
+for (i in seq_along(along.with = groupShortName$Long)) {
+  MEPsDF$GroupShort <- stringr::str_replace_all(string = MEPsDF$GroupShort, pattern = stringr::fixed(groupShortName$Long[i]), replacement = groupShortName$Short[i])
+}
+
+MEPsDF$GroupCombo <- paste0(MEPsDF$GROUP, " / ", MEPsDF$GroupShort)
+```
+
+As a result of the fact that Twitter allows to retrieve systematically only the latest 3,200 tweet for each user, [as highlighted in a previous post](../../18/meet-the-european-parliament-s-twittersphere/), analysis of older tweets are structurally incomplete. A dataset generated in mid-October 2017, allowed to gather about 1.3 million tweets by MEP, thus distributed by EP parliamentary group:
+
+
+```{r steamgraphTwitterN}
+allMEPfull_byGroup_byYear <- 
+  allMEPfull  %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(year, GroupCombo) %>%
+  tally() %>% 
+  # Include missing date, if no item on a given date
+  dplyr::full_join(tibble(year = 2008:2017), by = "year") %>%
+  ungroup() %>% 
+  complete(year, GroupCombo) %>% 
+  dplyr::arrange(year) %>% 
+  replace_na(replace = list(n = 0)) %>% 
+  arrange(desc(year), desc(n)) %>% 
+  mutate(GroupCombo = forcats::fct_inorder(GroupCombo))
+
+widgetframe::frameWidget(allMEPfull_byGroup_byYear %>%  streamgraph(key = GroupCombo, value = n, date = year, interpolate="cardinal") %>% sg_axis_x(tick_interval = 1))
+
+```
+
+The shape of the graph reflects this limitation: the further back in time, the less tweets are available.
+In order to include in our analysis also more prolific MEPs on Twitter, the following sections focus on tweets posted in the six-month period between May 2017 and October 2017. For the given period, our dataset includes data for all but the most hyper-active MEPs on the social network.^[For example, <a href="https://twitter.com/ramontremosa">Ramon Tremosa,</a> (a MEP of the ALDE group from Barcelona) has been posting more than 100 tweets per day on averge in recent weeks; as a consequence, it has been possible to retrive less than a month of his Twitter history.]
+
+# Tweeting above average
+
+Is the number of tweets posted by MEPs proportional to their share of seats in the European Parliament? If this was the case, the following lollipop graph would have all groups standing at 0%. 
+
+```{r lollipop_byTweet}
+# share of MEP per group
+
+# MEPshare <- MEPsDF %>% count(GROUP) %>% mutate(ShareMep = n/sum(n))
+# tweetMEPshare <- allMEPfull %>% filter(date>as.Date("2013-12-31")) %>% count(GROUP)  %>% mutate(ShareMep = n/sum(n))
+
+shareComparison <- bind_rows(SeatShare = MEPsDF %>% count(GroupShort) %>% mutate(ShareMep = n/sum(n)), 
+          TweetShare = allMEPfull %>% filter(date>as.Date("2017-04-30")) %>% count(GroupShort)  %>% mutate(ShareMep = n/sum(n)), .id = "Type") %>% 
+  select(-n) %>% 
+  spread(key = Type, value = ShareMep) %>% 
+  mutate(Difference = round(TweetShare/SeatShare, digits = 2)-1) %>% 
+  arrange(Difference) %>% 
+  mutate(GroupShort = forcats::fct_inorder(GroupShort))
+
+shareComparison %>%
+  ggplot(aes(x=GroupShort, y=Difference, label=scales::percent(Difference))) + 
+  geom_point(stat='identity', fill="black", size=12)  +
+  geom_segment(aes(y = 0, 
+                   x = `GroupShort`, 
+                   yend = Difference, 
+                   xend = `GroupShort`), 
+               color = "black") +
+  geom_text(color="white", size=3.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_x_discrete("") +
+  scale_y_continuous(name = "", limits = c(-1, 1), labels = scales::percent) +
+  labs(title = "MEPs tweeting above their weight", subtitle = "Share of tweets posted since May 2017 VS share of seats in the European parliament ")
+```
+
+As it turns out, this is not the case: smaller, non-centrist groups tend to have MEPs who are more active on Twitter: the two groups associated with Green/lefitst politics and the EFDD (mostly composed of representatives of pro-Brexit UKIP and Italy's Five star movement) tweet more frequently than their peers in the larger EP groups, such as the European Socialists and in particular the People's party. 
+
+For reference, here's a table with the full name and the relative abbreviation of all groups in the European Parliament.
+
+```{r}
+knitr::kable(groupShortName %>% rename(`Full name` = Long, `Abbreviation` = Short), caption = "Full name and abbreviation of groups in the European Parliament")
+```
+
+<br />
+Excluding retweets from the calculation presents similar trends, but further accentuates the results. In particular, it appears that EFDD members tweet twice as much as their average peers. Excluding retweets also highlights the frequency of original posts by largely anti-EU ENF members.
+
+```{r lollipop_byTweet_noRetweet}
+# share of MEP per group
+
+# MEPshare <- MEPsDF %>% count(GROUP) %>% mutate(ShareMep = n/sum(n))
+# tweetMEPshare <- allMEPfull %>% filter(date>as.Date("2013-12-31")) %>% count(GROUP)  %>% mutate(ShareMep = n/sum(n))
+
+shareComparison <- bind_rows(SeatShare = MEPsDF %>% count(GroupShort) %>% mutate(ShareMep = n/sum(n)), 
+          TweetShare = allMEPfull %>% filter(date>as.Date("2017-04-30"), is_retweet==FALSE) %>% count(GroupShort)  %>% mutate(ShareMep = n/sum(n)), .id = "Type") %>% 
+  select(-n) %>% 
+  spread(key = Type, value = ShareMep) %>% 
+  mutate(Difference = round(TweetShare/SeatShare, digits = 2)-1) %>% 
+  arrange(Difference) %>% 
+  mutate(GroupShort = forcats::fct_inorder(GroupShort))
+
+shareComparison %>%
+  ggplot(aes(x=GroupShort, y=Difference, label=scales::percent(Difference))) + 
+  geom_point(stat='identity', fill="black", size=12)  +
+  geom_segment(aes(y = 0, 
+                   x = `GroupShort`, 
+                   yend = Difference, 
+                   xend = `GroupShort`), 
+               color = "black") +
+  geom_text(color="white", size=3.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_x_discrete("") +
+  scale_y_continuous(name = "", limits = c(-1, 1), labels = scales::percent) +
+  labs(title = "MEPs tweeting above their weight", subtitle = "Share of tweets posted since May 2017 (excluding retweets) VS share of seats in the European parliament")
+```
+
+# Tweeting above their weight
+
+However, the number of interactions driven by these tweets are arguably a more important metric, than the bare number of tweets: if a tweet does not attract retweets or favorites, it probably did not attract much attention. So, which MEP do tweet above their weight?
+
+```{r}
+shareComparison <- bind_rows(SeatShare = MEPsDF %>% count(GroupShort) %>% mutate(ShareMep = n/sum(n)), 
+          TweetShare = allMEPfull %>% 
+  filter(date>as.Date("2017-04-30")) %>% #keep only starting with May 2017
+  filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others
+  mutate(interactions = retweet_count+favorite_count) %>% 
+  group_by(GroupShort) %>% 
+  tally(interactions) %>% 
+  mutate(ShareMep = n/sum(n)),
+  .id = "Type") %>% 
+  select(-n) %>% 
+  spread(key = Type, value = ShareMep) %>% 
+  mutate(Difference = round(TweetShare/SeatShare, digits = 2)-1) %>% 
+  arrange(Difference) %>% 
+  mutate(GroupShort = forcats::fct_inorder(GroupShort))
+
+shareComparison %>%
+  ggplot(aes(x=GroupShort, y=Difference, label=scales::percent(Difference))) + 
+  geom_point(stat='identity', fill="black", size=12)  +
+  geom_segment(aes(y = 0, 
+                   x = `GroupShort`, 
+                   yend = Difference, 
+                   xend = `GroupShort`), 
+               color = "black") +
+  geom_text(color="white", size=3.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_x_discrete("") +
+  scale_y_continuous(name = "", labels = scales::percent) +
+  labs(title = "MEPs tweeting above their weight", subtitle = "Share of retweets/favorite to posts by MEP since May 2017 VS share of seats in the European parliament ")
+```
+
+The answer is quite clear: tweets by MEP belonging to largely eurosceptic EFDD and ENF attract by far more interactions than all others. To clarify the meaning of the above graph: if each MEP got exactly the same number of retweets and favorites in the last six months (not matter how much they tweeted), all groups would be at 0%. In other words, tweets by EFDD members attract 5 times more interactions than the average MEP. Tweets by the largest EP groups (EPP and S&D) attract far less interactions.
+
+# Twitter heavyweights
+
+These results seem to be largely driven by a small group of MEP who, by number of interactions, tower above all others. In the case of at least some of them, their popularity can hardly be ascribed to their activity in Brussels and Strabsbourg. 
+
+```{r}
+popularMEPs <- allMEPfull %>% 
+  filter(date>as.Date("2017-04-30")) %>% #keep only starting with May 2017
+  filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others
+  mutate(interactions = retweet_count+favorite_count) %>% 
+  group_by(screen_name, GroupShort) %>% 
+  tally(interactions, sort = TRUE) %>% 
+  ungroup() 
+  
+knitr::kable(x = popularMEPs %>%
+  top_n(10) %>% transmute(
+  `Twitter handle` = paste0("<a href='https://twitter.com/", screen_name, "'>@", screen_name, "</a>"), 
+  `EP group` = GroupShort,
+  `RT and favouite` = scales::comma(n)
+), caption = "Top MEP on Twitter by number of retweets and favorite",
+escape = FALSE)
+  # mutate(GroupShort = forcats::fct_inorder(GroupShort))
+
+
+```
+
+In the last six months, tweets by Nigel Farage have been retweeted or liked more than 3 million times; Matteo Salvini's more than one million times. Very big numbers are known to lead to misleading averages. Calculating the median, rather than the average, may lead to more meaningful results, as it would minimise the impact of individual Twitter super-stars. 
+
+```{r}
+popularMEPsMedian <- allMEPfull %>% 
+  filter(date>as.Date("2017-04-30")) %>% #keep only starting with May 2017
+  filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others
+  mutate(interactions = retweet_count+favorite_count) %>% 
+  group_by(screen_name, GroupShort) %>% 
+  tally(interactions, sort = TRUE) %>% 
+  ungroup() %>% 
+  mutate(MeanTotal = mean(n), MedianTotal = median(n)) %>% 
+  group_by(GroupShort, MedianTotal) %>% 
+  summarise(MeanByGroup = mean(n), MedianByGroup = median(n)) %>% 
+  mutate(Difference = round(MedianByGroup/MedianTotal, digits = 2)-1) %>% 
+  arrange(Difference) %>% 
+  ungroup() %>% 
+  mutate(GroupShort = forcats::fct_inorder(GroupShort))
+
+
+
+
+popularMEPsMedian %>%
+  ggplot(aes(x=GroupShort, y=Difference, label=scales::percent(Difference))) + 
+  geom_point(stat='identity', fill="black", size=12)  +
+  geom_segment(aes(y = 0, 
+                   x = `GroupShort`, 
+                   yend = Difference, 
+                   xend = `GroupShort`), 
+               color = "black") +
+  geom_text(color="white", size=3.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_x_discrete("") +
+  scale_y_continuous(name = "", labels = scales::percent) +
+  labs(title = "MEPs tweeting above their weight", subtitle = "Difference between overall median number of retweets/favorite, and correspondent value for each group")
+```
+
+The numbers are less extreme, but the trend remains noticeable: MEPs who are in the ENF and EFDD tend to attract more interactions than their peers in all other groups, most noticeably those belonging to the largest groups in the European Parliament such as the EPP and the S&D.
+
+# One by one
+
+The following graph allows you to explore the number of followers of each MEP, and the number of interactions (retweets and favourite received) in the last six months. 
+
+```{r}
+MEPsProfiles <- readRDS(file = file.path("..", "..", "static", "TwitterMEP", "MEPsProfiles.rds"))
+
+scatter <- left_join(x = popularMEPs %>% rename(Interactions = n), y = MEPsProfiles %>% select(screen_name, followers_count) %>% rename(`Number of followers` = followers_count), by = "screen_name") %>% rename(`EP group` = GroupShort, `Twitter handle` = screen_name)
+
+
+scatter_ggiraph <- scatter %>% 
+  ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
+  geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
+  theme_minimal() +
+  scale_y_continuous(name = "Number of retweets and favourites received (May-October 2017)", labels = scales::comma) +
+  scale_x_continuous(name = "Number of followers", labels = scales::comma) +
+  scale_color_brewer(palette = "Set1")
+widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph)))
+```
+<br />
+For clarity, the same graph is presented below at different levels of zoom.
+
+
+```{r scatter_ggiraph_filtered_100k }
+scatter_ggiraph_filtered_100k <- scatter %>% 
+  ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
+  geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
+  theme_minimal() +
+  scale_y_continuous(name = "Number of retweets and favourites received (May-October 2017)", labels = scales::comma, limits = c(0, 100000)) +
+  scale_x_continuous(name = "Number of followers", labels = scales::comma, limits = c(0, 100000)) +
+  scale_color_brewer(palette = "Set1")
+widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph_filtered_100k) ))
+```
+<br />
+
+```{r scatter_ggiraph_filtered_25k }
+scatter_ggiraph_filtered_25k <- scatter %>% 
+  ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
+  geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
+  theme_minimal() +
+  scale_y_continuous(name = "Number of retweets and favourites received (May-October 2017)", labels = scales::comma, limits = c(0, 25000)) +
+  scale_x_continuous(name = "Number of followers", labels = scales::comma, limits = c(0, 25000)) +
+  scale_color_brewer(palette = "Set1")
+widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph_filtered_25k) ))
+```
+<br />
+```{r scatter_ggiraph_filtered_5k }
+scatter_ggiraph_filtered_5k <- scatter %>% 
+  ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
+  geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
+  theme_minimal() +
+  scale_y_continuous(name = "Number of retweets and favourites received (May-October 2017)", labels = scales::comma, limits = c(0, 5000)) +
+  scale_x_continuous(name = "Number of followers", labels = scales::comma, limits = c(0, 5000)) +
+  scale_color_brewer(palette = "Set1")
+widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph_filtered_5k) ))
+```
+<br />

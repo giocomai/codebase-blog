@@ -1,0 +1,169 @@
+---
+title: Tweeting above their weight
+author: Giorgio Comai
+date: '2017-10-24'
+slug: tweeting-above-their-weight
+categories:
+  - twitter
+  - European Parliament
+tags: []
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/blazy/blazy.min.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
+
+
+<p>As a result of the fact that Twitter allows to retrieve systematically only the latest 3,200 tweet for each user, <a href="../../18/meet-the-european-parliament-s-twittersphere/">as highlighted in a previous post</a>, analysis of older tweets are structurally incomplete. A dataset generated in mid-October 2017, allowed to gather about 1.3 million tweets by MEP, thus distributed by EP parliamentary group:</p>
+<div id="htmlwidget-1" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2017-10-24-tweeting-above-their-weight_files/figure-html//widgets/widget_steamgraphTwitterN.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>The shape of the graph reflects this limitation: the further back in time, the less tweets are available. In order to include in our analysis also more prolific MEPs on Twitter, the following sections focus on tweets posted in the six-month period between May 2017 and October 2017. For the given period, our dataset includes data for all but the most hyper-active MEPs on the social network.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<div id="tweeting-above-average" class="section level1">
+<h1>Tweeting above average</h1>
+<p>Is the number of tweets posted by MEPs proportional to their share of seats in the European Parliament? If this was the case, the following lollipop graph would have all groups standing at 0%.</p>
+<p><img src="/post/2017-10-24-tweeting-above-their-weight_files/figure-html/lollipop_byTweet-1.png" width="672" /></p>
+<p>As it turns out, this is not the case: smaller, non-centrist groups tend to have MEPs who are more active on Twitter: the two groups associated with Green/lefitst politics and the EFDD (mostly composed of representatives of pro-Brexit UKIP and Italy’s Five star movement) tweet more frequently than their peers in the larger EP groups, such as the European Socialists and in particular the People’s party.</p>
+<p>For reference, here’s a table with the full name and the relative abbreviation of all groups in the European Parliament.</p>
+<table>
+<caption><span id="tab:unnamed-chunk-2">Table 1: </span>Full name and abbreviation of groups in the European Parliament</caption>
+<thead>
+<tr class="header">
+<th align="left">Full name</th>
+<th align="left">Abbreviation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Group of the European People’s Party (Christian Democrats)</td>
+<td align="left">EPP</td>
+</tr>
+<tr class="even">
+<td align="left">Europe of Freedom and Direct Democracy Group</td>
+<td align="left">EFDD</td>
+</tr>
+<tr class="odd">
+<td align="left">Group of the Greens/European Free Alliance</td>
+<td align="left">Greens–EFA</td>
+</tr>
+<tr class="even">
+<td align="left">Group of the Progressive Alliance of Socialists and Democrats in the European Parliament</td>
+<td align="left">S&amp;D</td>
+</tr>
+<tr class="odd">
+<td align="left">Confederal Group of the European United Left - Nordic Green Left</td>
+<td align="left">GUE-NGL</td>
+</tr>
+<tr class="even">
+<td align="left">Europe of Nations and Freedom Group</td>
+<td align="left">ENF</td>
+</tr>
+<tr class="odd">
+<td align="left">Group of the Alliance of Liberals and Democrats for Europe</td>
+<td align="left">ALDE</td>
+</tr>
+<tr class="even">
+<td align="left">European Conservatives and Reformists Group</td>
+<td align="left">ECR</td>
+</tr>
+<tr class="odd">
+<td align="left">Non-attached Members</td>
+<td align="left">NI</td>
+</tr>
+</tbody>
+</table>
+<p><br /> Excluding retweets from the calculation presents similar trends, but further accentuates the results. In particular, it appears that EFDD members tweet twice as much as their average peers. Excluding retweets also highlights the frequency of original posts by largely anti-EU ENF members.</p>
+<p><img src="/post/2017-10-24-tweeting-above-their-weight_files/figure-html/lollipop_byTweet_noRetweet-1.png" width="672" /></p>
+</div>
+<div id="tweeting-above-their-weight" class="section level1">
+<h1>Tweeting above their weight</h1>
+<p>However, the number of interactions driven by these tweets are arguably a more important metric, than the bare number of tweets: if a tweet does not attract retweets or favorites, it probably did not attract much attention. So, which MEP do tweet above their weight?</p>
+<p><img src="/post/2017-10-24-tweeting-above-their-weight_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The answer is quite clear: tweets by MEP belonging to largely eurosceptic EFDD and ENF attract by far more interactions than all others. To clarify the meaning of the above graph: if each MEP got exactly the same number of retweets and favorites in the last six months (not matter how much they tweeted), all groups would be at 0%. In other words, tweets by EFDD members attract 5 times more interactions than the average MEP. Tweets by the largest EP groups (EPP and S&amp;D) attract far less interactions.</p>
+</div>
+<div id="twitter-heavyweights" class="section level1">
+<h1>Twitter heavyweights</h1>
+<p>These results seem to be largely driven by a small group of MEP who, by number of interactions, tower above all others. In the case of at least some of them, their popularity can hardly be ascribed to their activity in Brussels and Strabsbourg.</p>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 2: </span>Top MEP on Twitter by number of retweets and favorite</caption>
+<thead>
+<tr class="header">
+<th align="left">Twitter handle</th>
+<th align="left">EP group</th>
+<th align="left">RT and favouite</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><a href='https://twitter.com/Nigel_Farage'><span class="citation">@Nigel_Farage</span></a></td>
+<td align="left">EFDD</td>
+<td align="left">3,156,442</td>
+</tr>
+<tr class="even">
+<td align="left"><a href='https://twitter.com/matteosalvinimi'><span class="citation">@matteosalvinimi</span></a></td>
+<td align="left">ENF</td>
+<td align="left">1,011,889</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href='https://twitter.com/DanielJHannan'><span class="citation">@DanielJHannan</span></a></td>
+<td align="left">ECR</td>
+<td align="left">572,919</td>
+</tr>
+<tr class="even">
+<td align="left"><a href='https://twitter.com/Beatrix_vStorch'><span class="citation">@Beatrix_vStorch</span></a></td>
+<td align="left">EFDD</td>
+<td align="left">553,389</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href='https://twitter.com/GuyVerhofstadt'><span class="citation">@GuyVerhofstadt</span></a></td>
+<td align="left">ALDE</td>
+<td align="left">526,115</td>
+</tr>
+<tr class="even">
+<td align="left"><a href='https://twitter.com/f_philippot'><span class="citation">@f_philippot</span></a></td>
+<td align="left">ENF</td>
+<td align="left">421,746</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href='https://twitter.com/JSaryuszWolski'><span class="citation">@JSaryuszWolski</span></a></td>
+<td align="left">EPP</td>
+<td align="left">306,374</td>
+</tr>
+<tr class="even">
+<td align="left"><a href='https://twitter.com/RCorbettMEP'><span class="citation">@RCorbettMEP</span></a></td>
+<td align="left">S&amp;D</td>
+<td align="left">281,658</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href='https://twitter.com/GerardBattenMEP'><span class="citation">@GerardBattenMEP</span></a></td>
+<td align="left">EFDD</td>
+<td align="left">214,612</td>
+</tr>
+<tr class="even">
+<td align="left"><a href='https://twitter.com/MiguelUrban'><span class="citation">@MiguelUrban</span></a></td>
+<td align="left">GUE-NGL</td>
+<td align="left">198,836</td>
+</tr>
+</tbody>
+</table>
+<p>In the last six months, tweets by Nigel Farage have been retweeted or liked more than 3 million times; Matteo Salvini’s more than one million times. Very big numbers are known to lead to misleading averages. Calculating the median, rather than the average, may lead to more meaningful results, as it would minimise the impact of individual Twitter super-stars.</p>
+<p><img src="/post/2017-10-24-tweeting-above-their-weight_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>The numbers are less extreme, but the trend remains noticeable: MEPs who are in the ENF and EFDD tend to attract more interactions than their peers in all other groups, most noticeably those belonging to the largest groups in the European Parliament such as the EPP and the S&amp;D.</p>
+</div>
+<div id="one-by-one" class="section level1">
+<h1>One by one</h1>
+<p>The following graph allows you to explore the number of followers of each MEP, and the number of interactions (retweets and favourite received) in the last six months.</p>
+<p><div id="htmlwidget-2" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"url":"/post/2017-10-24-tweeting-above-their-weight_files/figure-html//widgets/widget_unnamed-chunk-6.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script> <br /> For clarity, the same graph is presented below at different levels of zoom.</p>
+<p><div id="htmlwidget-3" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2017-10-24-tweeting-above-their-weight_files/figure-html//widgets/widget_scatter_ggiraph_filtered_100k.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script> <br /></p>
+<p><div id="htmlwidget-4" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-4">{"x":{"url":"/post/2017-10-24-tweeting-above-their-weight_files/figure-html//widgets/widget_scatter_ggiraph_filtered_25k.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script> <br /> <div id="htmlwidget-5" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-5">{"x":{"url":"/post/2017-10-24-tweeting-above-their-weight_files/figure-html//widgets/widget_scatter_ggiraph_filtered_5k.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script> <br /></p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>For example, <a href="https://twitter.com/ramontremosa">Ramon Tremosa,</a> (a MEP of the ALDE group from Barcelona) has been posting more than 100 tweets per day on averge in recent weeks; as a consequence, it has been possible to retrive less than a month of his Twitter history.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>

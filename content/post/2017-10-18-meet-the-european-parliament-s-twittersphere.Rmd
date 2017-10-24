@@ -32,14 +32,13 @@ allMEPfull <- readRDS(file = file.path("..", "..", "static",
 "TwitterMEP", "allMEPfull.rds"))  %>% mutate(date = as.Date(created_at)) %>%
 filter(date<as.Date("2017-10-16"))
 ```
-This is the first in a series of posts on how members of the European Parliament (MEPs) appear on Twitter. The first post will introduce the EP twittersphere and point at outline some curious facts. The following posts will focus on specific aspects.
+This is the first in a series of posts on how members of the European Parliament (MEPs) appear on Twitter. The first post will introduce the EP twittersphere, outline limitations to the analysis due to availability of tweets, and point at some broad trends. The following posts will focus on specific aspects.
 
-The dataset of tweets at the base of this and the following posts consists of the whole Twitter history of the current MEPs made available via the Twitter API `r scales::comma(nrow(allMEPfull))` tweets (yes, more than one million tweets).^[The code used to create the dataset is <a href="https://gist.github.com/giocomai/ea5fa8bd0732728abc05befedf8a2ac7">available on GitHub</a> An updated list of all MEPs with a Twitter account is available on <a href="https://github.com/eliflab/European-Parliament-Open-Data">GitHub, courtesy of Eliflab</a>.]
-
+The dataset of tweets at the base of this and the following posts consists of as much of the Twitter history of the current MEPs at Twitter makes available through its API; this amounts to `r scales::comma(nrow(allMEPfull))` tweets (yes, more than one million tweets).^[The code used to create the dataset is <a href="https://gist.github.com/giocomai/ea5fa8bd0732728abc05befedf8a2ac7">available on GitHub</a> An updated list of all MEPs with a Twitter account is available on <a href="https://github.com/eliflab/European-Parliament-Open-Data">GitHub, courtesy of Eliflab</a>.]
 
 ## How many are actually on Twitter?
 
-The vast majority of MEPs is currently on Twitter (more than 600 out of 751 MEPs). Only few joined in the early years of the platform, and electoral campaigns seems to serve as an encouragement for MEP to sign up to social media platforms in order to reach a wider audience. Small "bumps" in the total numbers of current MEPs on Twitter is visible both before the EP elections in June 2009, and the latest in May 2014.^[Again, keep in mind that these data refer to the number of *current* MEPs on Twitter: some of them were likely candidate also in 2009, but many weren't.] 
+The vast majority of MEPs is currently on Twitter (more than 600 out of 751 MEPs). Only few joined in the early years of the platform, and electoral campaigns seems to serve as an encouragement for MEP to sign up to social media platforms in order to reach a wider audience. Small "bumps" in the total numbers of current MEPs on Twitter is visible both before the EP election in June 2009, and the latest election in May 2014.^[Again, keep in mind that these data refer to the number of *current* MEPs on Twitter: some of them were likely candidates also in 2009, but many weren't.] 
 
 ```{r firstTweet_dataset, eval=FALSE}
 firstTweet <- 
@@ -98,8 +97,8 @@ firstTweet_profile_GG
 
 # How much do they tweet?
 
-It is important to higlight that Twitter limits the ability to retrieve older tweets. More specifically, it allows to retrieve systematically the latest 3,200 tweets for each user. This is substantial, but not enough to cover all of the Twitter history of the most prolific MEP twitterati. More precisely, as of October 2017 `r readRDS(file = file.path("..", "..", "static",
-"TwitterMEP", "MEPsProfiles.rds")) %>% select(statuses_count) %>% filter(statuses_count>3200) %>% nrow()` MEPs have tweeted more than 3,200 times. As of October 2017, this means that it is possible to retrieve the full Twitter history of all MEPs effectively only for the last few weeks, and that the most frequent tweeters are left out of calculations for previous periods.
+It is important to higlight that Twitter limits the ability to retrieve older tweets. More specifically, it allows to retrieve systematically the latest 3,200 tweets for each user. This is substantial, but not enough to cover all of the Twitter history of the most prolific MEP twitterati. More precisely, as of October 2017, `r readRDS(file = file.path("..", "..", "static",
+"TwitterMEP", "MEPsProfiles.rds")) %>% select(statuses_count) %>% filter(statuses_count>3200) %>% nrow()` MEPs have tweeted more than 3,200 times. This means that at this stage it is possible to retrieve the full Twitter history of all MEPs effectively only for the last few weeks, and that the most frequent tweeters are left out of calculations for previous periods.
 
 As a consequence, in terms of the current analsyis, the graph above should rather look as follows:
 
@@ -108,7 +107,7 @@ MEPsProfiles <- readRDS(file = file.path("..", "..", "static", "TwitterMEP", "ME
 
 firstTweet <- full_join(
   MEPsProfiles  %>%
-    filter(statuses_count>0) %>% 
+    filter(statuses_count>10) %>% # if less than 10 tweets, they are not really on Twitter
   arrange(date) %>% 
   group_by(date) %>% 
   add_count() %>%
@@ -118,7 +117,7 @@ firstTweet <- full_join(
 ,
   allMEPfull %>%
   group_by(screen_name) %>% 
-  #add_count() %>% filter(n>10) %>% select(-n) %>% 
+  add_count() %>% filter(n>10) %>% select(-n) %>% 
   slice(which.min(date)) %>% 
   ungroup() %>% 
   select(screen_name, date) %>% 
@@ -157,6 +156,8 @@ firstTweet_available_GG
 
 As a consequence of the limits imposed by Twitter on the possibility to systematically retrieve older tweets, analyses on the pre-April 2017 period are based on incomplete data, i.e. tweets by those MEPs who tweet less frequently. In spite of this substantial limitation, the following graphs still point at some trends that can be observed at least among those MEPs who post less frequently.
 
+## When did they tweet?
+
 ```{r allTweetsBlue_gg}
 allTweetsBlue <- allMEPfull  %>%
   group_by(date) %>%
@@ -181,7 +182,7 @@ allTweetsBlue_gg
 
 The graph shows a noticeable peak immediately preceeding the European Parliament elections in May 2014, as well as seasonal variations highlighting periods of lower and higher activity .
 
-As appears more clearly from the following ridgeline graph, that includes yearly-adjusted data starting only with 2014, the seasonal trends can easily be explained: MEPs collectively tweet less in the summer (and in August in particular), as they do in the weeks around the new year.
+As appears more clearly from the following ridgeline graph, which includes yearly-adjusted data starting only with 2014, the seasonal trends can easily be explained: MEPs collectively tweet less in the summer (and in August in particular), as they do in the weeks around the new year.
 
 ```{r MEPyearlyRidge_gg}
 #allTweetsRidge <- allTweetsBlack %>% mutate(month =
@@ -204,7 +205,7 @@ allMEPfull %>%
   scale_fill_brewer(direction = 1)
 ```
 
-The trend is overall consistent, with some exceptions. The first is in the Spring of 2014, and is quite obviously related to the electoral campaign before the 2014 EP elections. The second is less accentuated but still noticeable around September 2017. A different, more granular visualisation may provide clues, without even looking at the contents of the tweet (I'm keeping that for a following post).
+The trend is overall consistent, with some exceptions. The first is in the Spring of 2014, and is quite obviously related to the electoral campaign before the 2014 EP elections. The second is less accentuated but still noticeable around September 2017. A different, more granular visualisation may provide clues, without even looking at the contents of the tweets (I'm keeping that for a separate post).
 
 ```{r calendar}
 Tweets_byDay <- 
@@ -250,12 +251,14 @@ calendar <- ggplot(temp, aes(x = `Week of the month`, y = `Day of the week`, fil
   labs(title = "When do MEPs tweet most?") +
   xlab("Week of month") +
   ylab("") + theme_minimal()
-plotly::ggplotly(p = calendar)
+
+widgetframe::frameWidget(plotly::ggplotly(p = calendar))
+
 ```
 
-Besides the overall trend of growth in recent months, some dates pop up from this heatmap-based calendar. On top, comes a day in the third week of September 2017: it's 13 September, the day when Jean-Claude Juncker made his "State of the Union" speech, also known with the hashtag #SOTEU. Indeed, the heatmap shows that every year in September there is a day when MEP tweet most: #SOTEU time.
+Besides the overall trend of growth in recent months, some dates pop up from this heatmap-based calendar. Busier mid-week days are likely associated with EP sessions. On top, however, comes a day in the third week of September 2017: it's 13 September, the day when Jean-Claude Juncker made his "State of the Union" speech, also known with the hashtag #SOTEU. Indeed, the heatmap shows that every year in September there is a day when MEP tweet most: #SOTEU time.^[#SOTEU speeches have been at the centre of two previous posts: <a href="../../../09/13/exploring-soteu-speeches/">Exploring #SOTEU speeches</a>, and <a href="../../../09/22/interactive-soteu-circle-plots-and-wordclouds/">Interactive #SOTEU circle plots and wordclouds</a>.]
 
 # What next?
 
-This post scratched the surface of the EP twittersphere just looking at how much was tweeted at a given point in time. The next post will start to deal with the "who" question, and only later we'll finally loook at the contents.  
+This post scratched the surface of the EP twittersphere just looking at how much MEPs tweeted at a given point in time. The next post will start to deal with the "who" question, and only later we'll finally loook at the actual contents of tweets.  
 

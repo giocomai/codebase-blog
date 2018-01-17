@@ -1,0 +1,59 @@
+---
+title: Meet the European Parliament's twittersphere
+author: Giorgio Comai
+date: '2018-01-17'
+slug: meet-the-european-parliament-s-twittersphere
+categories:
+  - twitter
+  - rstats
+tags:
+  - European Union
+  - European Parliament
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
+
+
+<p>This is the first in a series of posts on how members of the European Parliament (MEPs) appear on Twitter. The first post will introduce the EP twittersphere, outline limitations to the analysis, and point at some broad trends. The following posts will focus on specific aspects.</p>
+<p>The dataset at the base of this and the following posts consists of 1,500,680 tweets (yes, about one and a half million tweets) posted by current MEPs.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<p>You can explore interactively the last three months of tweets posted by MEPs in EdjNet’s latest tool, the <a href="https://www.europeandatajournalism.eu/eng/Tools-for-journalists/Quote-Finder">QuoteFinder</a>.</p>
+<div id="how-many-are-actually-on-twitter" class="section level2">
+<h2>How many are actually on Twitter?</h2>
+<p>The vast majority of MEPs is currently on Twitter (more than 600 out of 751 MEPs). Only few joined in the early years of the platform, and electoral campaigns seem to serve as an encouragement for MEP to sign up to social media platforms in order to reach a wider audience. Small “bumps” in the total numbers of current MEPs on Twitter is visible both before the EP election in June 2009, and the latest election in May 2014.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p><img src="/post/2018-01-17-meet-the-european-parliament-s-twittersphere_files/figure-html/firstTweet_profile-1.png" width="672" /></p>
+</div>
+<div id="how-much-do-they-tweet" class="section level1">
+<h1>How much do they tweet?</h1>
+<p>It is important to higlight that Twitter limits the ability to retrieve older tweets. More specifically, it allows to retrieve systematically the latest 3,200 tweets for each user. This is substantial, but not enough to cover all of the Twitter history of the most prolific MEP twitterati. More precisely, as of January 2017, 288 MEPs have tweeted more than 3,200 times. This means that at this stage it is possible to retrieve the full Twitter history of all MEPs effectively only for the last few weeks, and that the most frequent tweeters are left out of calculations for previous periods.</p>
+<p>As a consequence, in terms of the current analsyis, the graph above should rather look as follows:</p>
+<p><img src="/post/2018-01-17-meet-the-european-parliament-s-twittersphere_files/figure-html/firstTweet_available_GG-1.png" width="672" /></p>
+</div>
+<div id="hints-from-incomplete-data" class="section level1">
+<h1>Hints from incomplete data</h1>
+<p>As a consequence of the limits imposed by Twitter on the possibility to systematically retrieve older tweets, analyses on earlier years are based on incomplete data, i.e. tweets by those MEPs who tweet less frequently. In spite of this substantial limitation, the following graphs still point at some trends that can be observed at least among those MEPs who post less frequently.</p>
+<div id="when-did-they-tweet" class="section level2">
+<h2>When did they tweet?</h2>
+<p><img src="/post/2018-01-17-meet-the-european-parliament-s-twittersphere_files/figure-html/allTweetsBlue_gg-1.png" width="672" /></p>
+<p>The graph shows a noticeable peak immediately preceeding the European Parliament elections in May 2014, as well as seasonal variations highlighting periods of lower and higher activity .</p>
+<p>As appears more clearly from the following ridgeline graph, which includes yearly-adjusted data starting only with 2014, the seasonal trends can easily be explained: MEPs collectively tweet less in the summer (and in August in particular), as they do in the weeks around the new year.</p>
+<p><img src="/post/2018-01-17-meet-the-european-parliament-s-twittersphere_files/figure-html/MEPyearlyRidge_gg-1.png" width="672" /></p>
+<p>The trend is overall consistent, with some exceptions. The first is in the Spring of 2014, and is quite obviously related to the electoral campaign before the 2014 EP elections. The second is less accentuated but still noticeable around September 2017. A different, more granular visualisation may provide clues, without even looking at the contents of the tweets (I’m keeping that for a separate post).</p>
+<div id="htmlwidget-1" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2018-01-17-meet-the-european-parliament-s-twittersphere_files/figure-html//widgets/widget_calendar.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>Besides the overall trend of growth in recent months, some dates pop up from this heatmap-based calendar. Busier mid-week days are likely associated with EP sessions. On top, however, comes a day in the third week of September 2017: it’s 13 September, the day when Jean-Claude Juncker made his “State of the Union” speech, also known with the hashtag #SOTEU. Indeed, the heatmap shows that every year in September there is a day when MEP tweet most: #SOTEU time.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+</div>
+</div>
+<div id="what-next" class="section level1">
+<h1>What next?</h1>
+<p>This post scratched the surface of the EP twittersphere just looking at how much MEPs tweeted at a given point in time. The next post will start to deal with the “who” question, and only later we’ll finally loook at the actual contents of tweets.</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>The code used to create the dataset is <a href="https://gist.github.com/giocomai/ea5fa8bd0732728abc05befedf8a2ac7">available on GitHub</a>. An updated list of all MEPs with a Twitter account is available on <a href="https://github.com/eliflab/European-Parliament-Open-Data">GitHub, courtesy of Eliflab</a>.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>Again, keep in mind that these data refer to the number of <em>current</em> MEPs on Twitter: some of them were likely candidates also in 2009, but many weren’t.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>#SOTEU speeches have been at the centre of two previous posts: <a href="../../../09/13/exploring-soteu-speeches/">Exploring #SOTEU speeches</a>, and <a href="../../../09/22/interactive-soteu-circle-plots-and-wordclouds/">Interactive #SOTEU circle plots and wordclouds</a>.<a href="#fnref3">↩</a></p></li>
+</ol>
+</div>

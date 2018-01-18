@@ -22,7 +22,7 @@ pacman::p_load("lubridate") # date handling
 pacman::p_load("devtools")  # install packages from GitHub
 pacman::p_load("htmlwidgets") # store interactive as separate html and embed with iframe
 pacman::p_load("widgetframe") # store interactive as separate html and embed with iframe
-devtools::install_github(repo = "giocomai/castarter", ref = "development") # content analysis starter toolkit package, developed by yours truly (under development)
+devtools::install_github(repo = "giocomai/castarter") # content analysis starter toolkit package, developed by yours truly (under development)
 library("castarter")
 pacman::p_load("highcharter")  # interactive graphs
 devtools::install_github("hrbrmstr/streamgraph") # interactive steam graphs
@@ -39,13 +39,13 @@ Looking at the archive of press releases and speeches published by the European 
 
 ```{r}
 dataset <- bind_rows(readRDS(file = file.path("..", "..", "static", "EuropeanCommission_Archive", "dataset1.rds")),
-                             readRDS(file = file.path("..", "..", "static", "EuropeanCommission_Archive", "dataset2.rds"))) #load dataset created with this: https://gist.github.com/giocomai/e4138290a74eaf94ffc267a90b9998c9
+                             readRDS(file = file.path("..", "..", "static", "EuropeanCommission_Archive", "dataset2.rds"))) %>% rename(text = contents) #load dataset created with this: https://gist.github.com/giocomai/e4138290a74eaf94ffc267a90b9998c9
 
 ## clean up texts
-dataset$contents <- stringr::str_replace_all(string = dataset$contents, pattern = stringr::regex("Press contacts:.*"), replacement = "")
-dataset$contents <- stringr::str_replace_all(string = dataset$contents, pattern = stringr::regex("For More Information.*", ignore_case = TRUE), replacement = "")
+dataset$text <- stringr::str_replace_all(string = dataset$text, pattern = stringr::regex("Press contacts:.*"), replacement = "")
+dataset$text <- stringr::str_replace_all(string = dataset$text, pattern = stringr::regex("For More Information.*", ignore_case = TRUE), replacement = "")
 # to fix toeknization when dot not followed by space
-dataset$contents <- stringr::str_replace_all(string = dataset$contents, pattern = stringr::fixed("."), replacement = ". ")
+dataset$text <- stringr::str_replace_all(string = dataset$text, pattern = stringr::fixed("."), replacement = ". ")
 
 
 crisisDF <- castarter::ShowRelativeTS(terms = c("crisis"), dataset = dataset, type = "data.frame", rollingAverage = 91) # calculate relative word frequency 
@@ -116,7 +116,7 @@ crisis_gg_post2007
 Here's a list of all the types of *crisis* that have been mentioned in press releases issued by the European Commission at least 10 times since 1985.
 
 ```{r dt_typesOfCrisis}
-datasetBigrams <- dataset %>%  filter(stringr::str_detect(string = contents, pattern = "crisis")) %>%  select(date, contents) %>% unnest_tokens(bigram, contents, token = "ngrams", n = 2) %>%  filter(stringr::str_detect(pattern = "crisis", string = bigram)) %>% # removing bigrams with stopwords
+datasetBigrams <- dataset %>%  filter(stringr::str_detect(string = text, pattern = "crisis")) %>%  select(date, text) %>% unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%  filter(stringr::str_detect(pattern = "crisis", string = bigram)) %>% # removing bigrams with stopwords
   separate(bigram, c("word1", "word2"), sep = " ") %>% 
   filter(!word1 %in% stop_words$word) %>%
   filter(!word2 %in% stop_words$word) 
@@ -263,10 +263,10 @@ These are numbers, and obviously tell only part of the story. But if you are int
 # creating the dataset used in interactive shiny app below
 crisisBySentence <-  dataset %>%
                 #filter(date>as.Date("1999-12-31")) %>%
-                filter(stringr::str_detect(string = contents,
+                filter(stringr::str_detect(string = text,
                                            pattern = stringr::regex("crisis", ignore_case = TRUE))) %>%
-  select(date, title, contents, link) %>%
-  unnest_tokens(sentence, contents, token = "sentences" ,to_lower = FALSE) %>%
+  select(date, title, text, link) %>%
+  unnest_tokens(sentence, text, token = "sentences" ,to_lower = FALSE) %>%
   filter(stringr::str_detect(pattern = stringr::regex("crisis",
                                                       ignore_case = TRUE), string = sentence))
 

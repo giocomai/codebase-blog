@@ -96,8 +96,7 @@ as.numeric(as.Date(c("2014-05-25", "2009-06-07"))), linetype = 2)
 
 ```{r firstTweet_profile}
 
-firstTweet <- readRDS(file = file.path("..", "..", "static",
-"TwitterMEP", "MEPsProfiles.rds")) %>%
+firstTweet <- MEPsProfiles %>%
   mutate(date = as.Date(account_created_at)) %>% 
   group_by(date) %>% 
   count()
@@ -108,6 +107,7 @@ firstTweet$`Not on Twitter` <- 751 - firstTweet$`On Twitter`
 firstTweet_profile_GG <- firstTweet %>%
   select(-n) %>%
   gather(`On Twitter?`, Number, c(`On Twitter`, `Not on Twitter`)) %>% 
+  ungroup() %>% 
   ggplot(mapping = aes(x = date, y = Number, fill = `On Twitter?`)) +
   geom_area() +
   scale_y_continuous("") +
@@ -133,10 +133,12 @@ It is important to higlight that Twitter limits the ability to retrieve older tw
 As a consequence, in terms of the current analsyis, the graph above should rather look as follows:
 
 ```{r firstTweet_available_GG}
-MEPsProfiles <- readRDS(file = file.path("..", "..", "static", "TwitterMEP", "MEPsProfiles.rds")) %>% mutate(date = as.Date(account_created_at)) %>% select(screen_name, date, statuses_count) 
+MEPsProfiles <- MEPsProfiles  %>%
+    mutate(date = as.Date(account_created_at)) %>%
+    select(screen_name, date, statuses_count)
 
 firstTweet <- full_join(
-  MEPsProfiles  %>%
+  MEPsProfiles %>% 
     filter(statuses_count>10) %>% # if less than 10 tweets, they are not really on Twitter
   arrange(date) %>% 
   group_by(date) %>% 
@@ -156,7 +158,7 @@ firstTweet <- full_join(
   ungroup() %>% 
   distinct(date, n) %>% 
   rename(n_dataset = n) %>% 
-  full_join(tibble(date = seq.Date(from = min(MEPsProfiles$date, na.rm = TRUE), to = max(MEPsProfiles$date, na.rm = TRUE), by = "day")), by = "date"), by = "date") %>% arrange(date)
+  full_join(tibble(date = seq.Date(from = min(MEPsProfiles$date, na.rm = TRUE), to = max(MEPsProfiles$date, na.rm = TRUE), by = "day")), by = "date"), by = "date") %>% arrange(date) %>% ungroup()
 
 firstTweet$`On Twitter` <- purrr::map_int(.x = firstTweet$date, .f = function(x) sum(firstTweet$n_profile[firstTweet$date<x], na.rm = TRUE))
 firstTweet$`On Twitter, and tweets available` <- purrr::map_int(.x = firstTweet$date, .f = function(x) sum(firstTweet$n_dataset[firstTweet$date<x], na.rm = TRUE))

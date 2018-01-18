@@ -163,7 +163,7 @@ shareComparison %>%
 
 However, the number of interactions driven by these tweets are arguably a more important metric than the bare number of tweets. So, which MEP do tweet above their weight?
 
-```{r}
+```{r Average engagement MEP}
 shareComparison <- bind_rows(SeatShare = MEPsDF %>% count(GroupShort) %>% mutate(ShareMep = n/sum(n)), 
           TweetShare = allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
@@ -201,7 +201,7 @@ The answer is quite clear: tweets by MEP belonging to largely eurosceptic EFDD a
 
 These results seem to be largely driven by a small group of MEPs who, by number of interactions, tower above all others. In the case of at least some of them, their popularity can hardly be ascribed to their activity in Brussels and Strabsbourg. 
 
-```{r}
+```{r Twitter heavyweights}
 popularMEPs <- allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
   filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others
@@ -224,7 +224,7 @@ escape = FALSE)
 
 Last year, tweets by Nigel Farage have been retweeted or liked more than 5 million times; Matteo Salvini's almost two million times. Very big numbers are known to lead to misleading averages. Calculating the median, rather than the average, may lead to more meaningful results, as it would minimise the impact of individual Twitter super-stars. 
 
-```{r}
+```{r MEPs median}
 popularMEPsMedian <- allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
   filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others
@@ -263,9 +263,9 @@ The numbers are less extreme, but the trend remains noticeable: MEPs who are in 
 
 # One by one
 
-The following graph allows you to explore the number of followers of each MEP, and the number of interactions (retweets and favourite received) in 2017. 
+The following graph allows you to explore the number of followers of each MEP, and the number of interactions (retweets and favourite received) in 2017.
 
-```{r}
+```{r scatter_ggiraph_MEPs}
 MEPsProfiles <- readRDS(file = file.path("..", "..", "static", "TwitterMEP", "MEPsProfiles.rds"))
 
 scatter <- left_join(x = popularMEPs %>% rename(Interactions = n), y = MEPsProfiles %>% select(screen_name, followers_count) %>% rename(`Number of followers` = followers_count), by = "screen_name") %>% rename(`EP group` = GroupShort, `Twitter handle` = screen_name)
@@ -275,33 +275,32 @@ scatter_ggiraph <- scatter %>%
   ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
   geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
   theme_minimal() +
-  scale_y_continuous(name = "Number of retweets and favourites received (May-December 2017)", labels = scales::comma) +
+  scale_y_continuous(name = "Number of retweets and favourites received in 2017", labels = scales::comma) +
   scale_x_continuous(name = "Number of followers", labels = scales::comma) +
   scale_color_brewer(palette = "Set1")
 widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph)))
 ```
-<br />
-For clarity, the same graph is presented below at different levels of zoom.
-<br />
 
-```{r scatter_ggiraph_filtered_100k }
+For clarity, the same graph is presented below at a closer level of zoom (MEPs with less than 100,000 followers and interactions).
+
+```{r scatter_ggiraph_filtered_100k,eval=TRUE}
 scatter_ggiraph_filtered_100k <- scatter %>% 
   ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
   geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
   theme_minimal() +
-  scale_y_continuous(name = "Number of retweets and favourites received (May-December 2017)", labels = scales::comma, limits = c(0, 100000)) +
+  scale_y_continuous(name = "Number of retweets and favourites received in 2017", labels = scales::comma, limits = c(0, 100000)) +
   scale_x_continuous(name = "Number of followers", labels = scales::comma, limits = c(0, 100000)) +
   scale_color_brewer(palette = "Set1")
 widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph_filtered_100k) ))
 ```
 <br />
 
-```{r scatter_ggiraph_filtered_25k }
+```{r scatter_ggiraph_filtered_25k,,eval=FALSE }
 scatter_ggiraph_filtered_25k <- scatter %>% 
   ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
   geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
   theme_minimal() +
-  scale_y_continuous(name = "Number of retweets and favourites received (May-December 2017)", labels = scales::comma, limits = c(0, 25000)) +
+  scale_y_continuous(name = "Number of retweets and favourites received in 2017", labels = scales::comma, limits = c(0, 25000)) +
   scale_x_continuous(name = "Number of followers", labels = scales::comma, limits = c(0, 25000)) +
   scale_color_brewer(palette = "Set1")
 widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph_filtered_25k) ))
@@ -312,9 +311,8 @@ scatter_ggiraph_filtered_5k <- scatter %>%
   ggplot(mapping = aes(x = `Number of followers`, y = Interactions, colour = `EP group`)) +
   geom_point_interactive(aes(tooltip =  `Twitter handle`), size = 2)  +
   theme_minimal() +
-  scale_y_continuous(name = "Number of retweets and favourites received (May-December 2017)", labels = scales::comma, limits = c(0, 5000)) +
+  scale_y_continuous(name = "Number of retweets and favourites received in 2017", labels = scales::comma, limits = c(0, 5000)) +
   scale_x_continuous(name = "Number of followers", labels = scales::comma, limits = c(0, 5000)) +
   scale_color_brewer(palette = "Set1")
 widgetframe::frameWidget(ggiraph(code = print(scatter_ggiraph_filtered_5k) ))
 ```
-<br />

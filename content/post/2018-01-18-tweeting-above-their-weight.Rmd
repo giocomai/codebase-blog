@@ -163,7 +163,7 @@ shareComparison %>%
 
 However, the number of interactions driven by these tweets are arguably a more important metric than the bare number of tweets. So, which MEP do tweet above their weight?
 
-```{r Average engagement MEP}
+```{r Average_engagement_MEP}
 shareComparison <- bind_rows(SeatShare = MEPsDF %>% count(GroupShort) %>% mutate(ShareMep = n/sum(n)), 
           TweetShare = allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
@@ -199,9 +199,9 @@ The answer is quite clear: tweets by MEP belonging to largely eurosceptic EFDD a
 
 # Twitter heavyweights
 
-These results seem to be largely driven by a small group of MEPs who, by number of interactions, tower above all others. In the case of at least some of them, their popularity can hardly be ascribed to their activity in Brussels and Strabsbourg. 
+These results seem to be largely driven by a small group of MEPs who, by number of interactions, tower above all others. In the case of at least some of them, their popularity can hardly be ascribed to their activity in Brussels and Strasbourg. 
 
-```{r Twitter heavyweights}
+```{r Twitter_heavyweights}
 popularMEPs <- allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
   filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others
@@ -224,7 +224,7 @@ escape = FALSE)
 
 Last year, tweets by Nigel Farage have been retweeted or liked more than 5 million times; Matteo Salvini's almost two million times. Very big numbers are known to lead to misleading averages. Calculating the median, rather than the average, may lead to more meaningful results, as it would minimise the impact of individual Twitter super-stars. 
 
-```{r MEPs median}
+```{r MEPs_median}
 popularMEPsMedian <- allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
   filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others

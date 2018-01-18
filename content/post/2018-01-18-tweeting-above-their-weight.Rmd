@@ -201,7 +201,7 @@ The answer is quite clear: tweets by MEP belonging to largely eurosceptic EFDD a
 
 These results seem to be largely driven by a small group of MEPs who, by number of interactions, tower above all others. In the case of at least some of them, their popularity can hardly be ascribed to their activity in Brussels and Strasbourg. 
 
-```{r Twitter_heavyweights}
+```{r}
 popularMEPs <- allMEPfull %>% 
   filter(date>as.Date("2016-12-31")) %>% #keep only starting with May 2017
   filter(is_retweet == FALSE) %>%  # exclude if they are retweeting others

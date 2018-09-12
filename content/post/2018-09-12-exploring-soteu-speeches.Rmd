@@ -146,10 +146,17 @@ speechesOriginal_byWord %>% group_by(id) %>% count() %>%
   theme_minimal() +
   labs(title = "Number of words for each #SOTEU")
 
+speechesOriginal_byWord %>% 
+  filter(President!="Barroso") %>% 
+  group_by(id) %>% count() %>% 
+  ggplot(mapping = aes(x = id, y = n)) + 
+  geom_col() +
+  scale_x_discrete(name = "") +
+  scale_y_continuous(name = "") +
+  theme_minimal() +
+  labs(title = "Number of words for each #SOTEU")
+
 ```
-
-[*Download this graph*](/post/2018-09-12-exploring-soteu-speeches_files/figure-html/numberOfWordsPerSoteu-1.png).
-
 
 
 ```{r mostFrequent_barchart_20, eval= FALSE}
@@ -204,7 +211,38 @@ mostFrequent_barchart__2018_20
 
 ```
 
-[*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/mostFrequent_barchart__2018_20-1.png).
+
+
+### Juncker 2018 wordcloud
+
+
+```{r wordcloud_Juncker2018, fig.height=10, fig.width=10}
+
+ speeches_by_speech %>% 
+  filter(id == "Juncker 2018")  %>%
+  anti_join(stop_words) %>% 
+  with(wordcloud(word, n, max.words = 150, 
+                 random.order = FALSE, 
+                 random.color = FALSE,
+                 colors = TRUE, vfont=c("serif","plain")))
+```
+
+Same as above, with different color palette. 
+
+```{r fig.height=10, fig.width=10}
+
+pal <- brewer.pal(9, "Blues")
+pal <- pal[-(1:2)]
+#pal2 <- brewer.pal(8,"Dark2")
+ speeches_by_speech %>% 
+  filter(id == "Juncker 2018")  %>%
+  anti_join(stop_words) %>% 
+  with(wordcloud(word, n, max.words = 150, 
+                 random.order = FALSE, 
+                 colors = pal,  vfont=c("serif","plain")))
+```
+
+
 
 ```{r mostFrequent_barchart__2018_totalcolor_20}
 mostFrequent_barchart__2018_totalcolor_20 <- 
@@ -259,21 +297,28 @@ keywords_circles_mostFrequent
 [*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/keywords_circles_mostFrequent-1.png).
 
 
+```{r}
+keywords_circles_mostFrequent_noBarroso <- speeches_by_speech %>%
+  filter(stringr::str_detect(string = id, pattern = "Barroso")==FALSE) %>% 
+  filter(is.element(word, mostFrequentWords)) %>% 
+  mutate(word = factor(word, levels = unique(word))) %>% # makes sure order is kept for graph 
+  ggplot(mapping = aes(x = word, y = id, size = n, colour = n, label = n)) +
+  geom_point(shape = 21, stroke = 3, size = 10) +
+  geom_text(mapping = aes(size = 25), colour = "black") +
+  scale_colour_continuous(low = "yellow", high = "red")+
+  scale_x_discrete(name = "") +
+  scale_y_discrete(name = "") +
+  coord_flip() +
+  theme_minimal() +
+  theme(legend.position="none") +
+  labs(title = "Most frequent keywords in #SOTEU speeches", caption = "Data processing:  Giorgio Comai / OBC Transeuropa / #edjnet")
+
+keywords_circles_mostFrequent_noBarroso
+```
+
+
 ## Wordclouds
 
-### Juncker 2018 wordcloud
-
-
-```{r wordcloud_Juncker2018, fig.height=10, fig.width=10}
-
- speeches_by_speech %>% 
-  filter(id == "Juncker 2018")  %>%
-  anti_join(stop_words) %>% 
-  with(wordcloud(word, n, max.words = 150, 
-                 random.order = FALSE, 
-                 random.color = FALSE,
-                 colors = TRUE, vfont=c("serif","plain")))
-```
 
 ## What are the most distinctive words of each SOTEU speech?
 
@@ -339,11 +384,36 @@ keywords_circles
 
 [*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/wordcloud_all_soteu-1.png).
 
+Without Barroso:
+
+```{r}
+keywords_circles <- speeches_by_speech %>% 
+  filter(stringr::str_detect(string = id, pattern = "Barroso")==FALSE) %>% 
+  filter(word == "solidarity" | word == "refugee" |word == "crisis" | word == "greece"| word == "climate" | word == "citizens"| word == "euro" | word == "jobs" | word == "africa" ) %>% 
+  mutate(word = factor(word, levels = unique(word))) %>% # makes sure order is kept for graph 
+  ggplot(mapping = aes(x = word, y = id, size = n, colour = n, label = n)) +
+  geom_point(shape = 21, stroke = 3, size = 10) +
+  geom_text(mapping = aes(size = 25), colour = "black") +
+  scale_colour_continuous(low = "yellow", high = "red")+
+  scale_x_discrete(name = "") +
+  scale_y_discrete(name = "") +
+  coord_flip() +
+  theme_minimal() +
+  theme(legend.position="none") +
+  labs(title = "Frequency of selected keywords in #SOTEU speeches")
+
+keywords_circles
+
+
+
+```
+
+
 ## Words with positive/negative connotation
 
 The following wordclouds highlight the frequency of words which have a positive and negative connotation according to the lexicon by [Bing Liu and collaborators](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html).[^1]
 
-Looking at these wordlcouds, it quickly appears that 'crisis' is the dominant negative words in each of the speeches, but the positive counterpoint is different every year. 
+Looking at these wordclouds, it quickly appears that 'crisis' is the dominant negative words in each of the speeches, but the positive counterpoint is different every year. 
 
 
 ### All speeches
@@ -359,65 +429,6 @@ speeches %>%
 
 [*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/wordcloud_allSoteu_sentiment-1.png).
 
-### Barroso 2010
-```{r wordcloud_Barroso2010_sentiment, fig.height=5.8, fig.width=5.8, include=TRUE}
-speeches %>%
-  filter(id == "Barroso 2010") %>% 
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
-                   max.words = 100,  vfont=c("serif","plain"))
-```
-
-[*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/wordcloud_Barroso2010_sentiment-1.png).
-
-### Barroso 2011
-
-```{r wordcloud_Barroso2011_sentiment, fig.height=5.8, fig.width=5.8, include=TRUE}
-
-speeches %>%
-  filter(id == "Barroso 2011") %>% 
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
-                   max.words = 100,  vfont=c("serif","plain"))
-
-```
-
-[*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/wordcloud_Barroso2011_sentiment-1.png).
-
-### Barroso 2012
-
-```{r wordcloud_Barroso2012_sentiment, fig.height=5.8, fig.width=5.8, include=TRUE}
-
-speeches %>%
-  filter(id == "Barroso 2012") %>% 
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
-                   max.words = 100,  vfont=c("serif","plain"))
-```
-
-[*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/static/img/wordcloud_Barroso2012_sentiment-1.png).
-
-### Barroso 2013
-
-```{r fig.height=5.8, fig.width=5.8, include=TRUE}
-
-speeches %>%
-  filter(id == "Barroso 2013") %>% 
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
-                   max.words = 100,  vfont=c("serif","plain"))
-
-```
-
-[*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/static/img/wordcloud_Barroso2013_sentiment-1.png).
 
 ### Juncker 2015
 

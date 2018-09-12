@@ -331,7 +331,7 @@ speeches %>%
   count(word) %>%
   arrange(desc(id)) %>% 
   spread(id, n) %>% 
-  select(word, `Barroso 2010`, `Juncker 2018`,`Juncker 2017`, `Juncker 2016`, `Juncker 2015`, `Barroso 2013`, `Barroso 2012`, `Barroso 2011`) %>% 
+  select(word, `Barroso 2011`, `Barroso 2010`, `Juncker 2018`,`Juncker 2017`, `Juncker 2016`, `Juncker 2015`, `Barroso 2013`, `Barroso 2012`) %>% 
   remove_rownames() %>% 
   column_to_rownames("word") %>% 
   replace(is.na(.), 0) %>% 

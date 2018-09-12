@@ -556,6 +556,32 @@ prebuild %>%
 ```
 
 
+## Trends in selected keywords
+
+```{r}
+library("gganimate")
+#"solidarity" | word == "refugee" |word == "crisis" | word == "greece"| word == "climate" | word == "citizens"| word == "euro" | word == "jobs" 
+
+speeches_by_speech %>% 
+  mutate(id = str_replace(string = id, pattern = " ", replacement = "\n")) %>% 
+ # filter(stringr::str_detect(string = id, pattern = "Barroso")==FALSE) %>% 
+  filter(word == "refugee" |word == "crisis" | word == "growth") %>% 
+  complete(id, word, fill = list(n = 0, total = 0)) %>% 
+  ggplot(mapping = aes(x = id, y = n, label = n)) +
+  transition_states(states = word,
+                    transition_length = 1,
+                    state_length = 4) + 
+  geom_col(fill = "steelblue4") +
+  scale_x_discrete(name = "") +
+  scale_y_continuous(name = "Number of mentions") +
+  theme_minimal(base_size = 18, base_family = "Carlito") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none") +
+  labs(title = "Words disappearing from #SOTEU speeches:\n{closest_state}")
+  
+```
+
+
+
 ## License
 
 This document, the graphs, and the code are distributed under a [Creative Commons license (BY)](https://creativecommons.org/licenses/by/4.0/). In brief, you can use and adapt all of the above as long you acknowledge the source: Giorgio Comai/OBC Transeuropa/#edjnet - [https://datavis.europeandatajournalism.eu/obct/soteu/](https://datavis.europeandatajournalism.eu/obct/soteu/).

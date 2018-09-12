@@ -324,7 +324,7 @@ keywords_circles_mostFrequent_noBarroso
 
 The following wordcloud compares the frequency of words across speeches, showing the words that are most frequent in each of the speech and are at the same time less frequently found in other speeches. 
 
-```{r wordcloud_all_soteu_byspeech_ss, fig.height=13, fig.width=12}
+```{r wordcloud_all_soteu_byspeech_ss, fig.height=13, fig.width=14}
 speeches %>%
   anti_join(stop_words) %>%
   group_by(id) %>% 

@@ -261,18 +261,19 @@ keywords_circles_mostFrequent
 
 ## Wordclouds
 
-```{r wordcloud_all_soteu, fig.height=10, fig.width=10}
+### Juncker 2018 wordcloud
 
-speeches %>%
-  anti_join(stop_words) %>%
-  count(word) %>%
+
+```{r wordcloud_Juncker2018, fig.height=10, fig.width=10}
+
+ speeches_by_speech %>% 
+  filter(id == "Juncker 2018")  %>%
+  anti_join(stop_words) %>% 
   with(wordcloud(word, n, max.words = 150, 
                  random.order = FALSE, 
                  random.color = FALSE,
                  colors = TRUE, vfont=c("serif","plain")))
 ```
-
-[*Download this graph*](../../../../post/2018-09-12-exploring-soteu-speeches_files/figure-html/wordcloud_all_soteu-1.png).
 
 ## What are the most distinctive words of each SOTEU speech?
 
@@ -320,7 +321,7 @@ speeches %>%
 
 ```{r keywords_circles}
 keywords_circles <- speeches_by_speech %>% 
-  filter(word == "solidarity" | word == "refugee" |word == "crisis" | word == "greece"| word == "climate" | word == "citizens"| word == "euro" | word == "jobs" ) %>% 
+  filter(word == "solidarity" | word == "refugee" |word == "crisis" | word == "greece"| word == "climate" | word == "citizens"| word == "euro" | word == "jobs" | word == "africa" ) %>% 
   mutate(word = factor(word, levels = unique(word))) %>% # makes sure order is kept for graph 
   ggplot(mapping = aes(x = word, y = id, size = n, colour = n, label = n)) +
   geom_point(shape = 21, stroke = 3, size = 10) +

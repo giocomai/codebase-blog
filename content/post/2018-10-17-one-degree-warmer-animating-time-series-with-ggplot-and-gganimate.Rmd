@@ -1,0 +1,267 @@
+---
+title: "Animating 'One Degree Warmer' time series with ggplot2 and gganimate"
+author: 'Giorgio Comai'
+date: '2018-10-17'
+slug: one-degree-warmer-animating-time-series-with-ggplot-and-gganimate
+categories: [rstats]
+tags: []
+---
+
+
+```{r message=FALSE, echo=FALSE}
+if(!require("pacman")) install.packages("pacman")
+knitr::opts_chunk$set(echo = FALSE)
+
+# pacman::p_load("googlesheets") # to get the data from google docs
+pacman::p_load("readxl") # to read xlsx file
+pacman::p_load("ggrepel") # used for labeling
+  
+if (!require("gganimate")) devtools::install_github("thomasp85/gganimate")
+library("gganimate") # get moving!
+
+pacman::p_load("DT") # for interactive tables
+
+pacman::p_load("tidyverse") # all the goodies!
+
+# If you want to change font
+# pacman::p_load("extrafont")
+# extrafont::loadfonts()
+```
+
+
+A couple of weeks ago, the European Data Journalism Network ([EdjNet](http://europeandatajournalism.eu/)) released a new dataset including yearly average temperatures between the year 1900 and 2017 for over 500 cities across Europe, and made it possible to find key data on each of them [through an interactive web interface](https://www.onedegreewarmer.eu/). Since these are lenghty and meaningful time series, I decided to use them to test-drive data animation with R with `ggplot2`+`gganimate`.^[__Disclaimer__: I did not take part to this investigation, but I currently work at [OBCT](http://balcanicaucaso.org/), which is a member of EdjNet.]
+
+## About the data
+
+Through the analysis of data made available by the European Centre for Medium-Range Weather Forecasts (ECMWF), and by harmonising historical time series with recent data obtained from a variety of sources (satellite, weather stations, buoys, weather balloons), the resulting time series should be more robust to changes on the ground (e.g. if a weather station was on the outskirt of a city, but then new buildings and roads were built around it, temperatures for more recent years would likely overestimtate the increase in temperature; not with this method). Check out [this piece published on EdjNet](https://www.europeandatajournalism.eu/eng/News/Data-news/Europe-is-getting-warmer-and-it-s-not-looking-like-it-s-going-to-cool-down-anytime-soon)'s website, or [check out the code published as a Jupyter Notebook](https://nbviewer.jupyter.org/urls/pastebin.com/raw/JcA37c2g) to find out more about all the details of data processing.
+
+Before diving into the data, here's a few more details that should be kept in consideration:
+
+- the figure for each city is obtained by averaging out data points for areas of about 80 square kilometers. As a consequence, the data refer to the city *and its surroundings*, which likely has a substantial impact on the data, in particular for cities that are along the coastline or located next to high mountains.
+- throughout the investigation, the authors compare 20th century average data with 21st century average data, so when they say "one degree warmer" they mean that the average temperature for the period 2000-2017 is one degree higher than the average temperature for 1900-1999.^[Yes, 20th century is actually 1901-2000, but that's the way the data have been calculated in the original timesheet... in practice, the difference is due to be negligible.] This is rather unusual, as most reporting on climate breakdown refers to increase in the temparature since "preindustrial levels", which mostly refers to the second half of the 19th century.^[I use "climate breakdown" instead of "climate change" as I have been persuaded by George Monbiot's argument that using climate change "[is like calling a foreign invasion 'unexpected guests'](https://twitter.com/novaramedia/status/1049244219611734017)": the weather changes all the time, but this is not what we are talking about now.] While this choice likely reduces the figure on warming when compared to other studies that refer to "preindustrial levels", this also means that having the whole time series we can decide to use other cutoff dates, and to compare - for example - the first 30 years of the dataset with the last 30. In this post, I'll however stick with the original definition. 
+
+A quick note on contents before giving way to the code: in each and all cities included in this investigation the temperature has increased between the 20th and 21st century, in many by more than one degree. Broadly speaking, this seems to be in line with the worrying analysis [presented by IPCC in early October](https://www.ipcc.ch/report/sr15/).
+
+# Get and clean the data
+
+A [spreadsheet with temperature per year and location has been made available by EdjNet](https://docs.google.com/spreadsheets/d/1avuUJmVNljyb2uotHKDGgrG8T74O7CcwG15p0budkH8/edit?usp=sharing). The data for each city have been published as separate sheets, so I have first downloaded the data as an .xlsx file to speed up processing, and then merged all the data in a [single data frame in the long format](https://github.com/giocomai/OneDegreeWarmer_animated/blob/master/data/temperaturesMerged.csv). [Selected indicators for each of the cities has been published in a separate spreadsheet](https://docs.google.com/spreadsheets/d/1X5J3GbAKGL5DxwB0aUzAutslHgZ7XFazkVmfQyXhIqM/edit#gid=595233479). This second file is not needed to create the graphs included in this post, but it can be useful to check if everything looks in order with the data, or to place the data on a map, as it includes also longitude and latitude for each city.
+
+__N.B.: [All of the the code is available as a repository on GitHub](https://github.com/giocomai/OneDegreeWarmer_animated)__
+
+```{r message=FALSE}
+# indicators
+# https://docs.google.com/spreadsheets/d/1X5J3GbAKGL5DxwB0aUzAutslHgZ7XFazkVmfQyXhIqM/edit#gid=595233479
+
+# Temperature per year and location
+#https://docs.google.com/spreadsheets/d/1avuUJmVNljyb2uotHKDGgrG8T74O7CcwG15p0budkH8/edit?usp=sharing
+
+dir.create(path = 
+             file.path("..",
+                       "..",
+                       "static",
+                       "onedegreewarmer"),
+           showWarnings = FALSE)
+
+temperatures_xlsx_location <-
+  file.path("..", "..", "static",
+            "onedegreewarmer",
+            "temperatures.xlsx")
+
+temperaturesMerged_csv_location  <-
+  file.path("..", "..",
+            "static",
+            "onedegreewarmer",
+            "temperaturesMerged.csv")
+
+if (!file.exists(temperaturesMerged_csv_location)) {
+  #gets each sheet of the excel file, and reads it separately
+  temperaturesL <- lapply(excel_sheets(temperatures_xlsx_location),
+                          read_excel,
+                          path = temperatures_xlsx_location)
+  names(temperaturesL) <- excel_sheets(temperatures_xlsx_location)
+  temperatures <- purrr::map_df(.x = temperaturesL,
+                                .f = bind_cols,
+                                .id = "City") %>% 
+    select(-2)
+
+  write_csv(x = temperatures,
+            path = temperaturesMerged_csv_location)
+} else {
+  temperatures <- read_csv(temperaturesMerged_csv_location)
+}
+
+```
+
+
+```{r message=FALSE, eval=FALSE}
+
+# not using this now, but leaving it here for reference and for possible further post with maps
+indicators <- read_csv(file = file.path("..",
+                                        "..",
+                                        "static",
+                                        "onedegreewarmer",
+                                        "indicators.csv"))
+
+tempCoord <- left_join(x = temperatures,
+                       y = indicators %>%
+                         select(City = city, lat, lon, size),
+                       by = "City")
+
+ 
+```
+
+## Making a static version of the graph
+
+The following graph has been made with `ggplot2`. Again, you can [check out the code at this link](https://github.com/giocomai/OneDegreeWarmer_animated/blob/master/OneDegreeWarmer_time_series.Rmd). It's quite a lot of typing, as all graphic components need to be defined separately, but the resulting graph looks nice, and, fundamentally the very same code can be applied to all cities included in the dataset without further changes. This example graph shows Granada, which is the city in Europe were the temperature grew most.
+
+```{r staticOneCity}
+i <- "Granada"
+
+oneCity <- 
+  temperatures %>% 
+  filter(City == i) %>% 
+  mutate(century = str_extract(string = date,
+                               pattern = "[[:digit:]][[:digit:]]")) %>% 
+  group_by(century) %>% 
+  mutate(AverageTempCentury = mean(temperature)) %>% 
+  mutate(date = lubridate::year(date)) %>% 
+  rename(Date = date)
+
+oneCity <-  oneCity %>% 
+  mutate(TempDifference = max(oneCity$AverageTempCentury)-min(oneCity$AverageTempCentury)) 
+
+
+staticOneCity <- 
+  ggplot(data = oneCity,
+         mapping = aes(x = Date,
+                       y = temperature,
+                       colour = `temperature`,
+                       AverageTempCentury)) +
+  geom_line(size = 1, color = "gray") +
+  geom_point() +
+
+  # 21st century horizontal line
+  geom_segment(aes(x = 1900,
+                   y = unique(oneCity$AverageTempCentury)[1],
+                   xend = 2000,
+                   yend = unique(oneCity$AverageTempCentury)[1]),
+               colour = "#6f2c91",
+               linetype=2) +
+  geom_segment(aes(x = 2000,
+                   y = unique(oneCity$AverageTempCentury)[1],
+                   xend = 2017,
+                   yend = unique(oneCity$AverageTempCentury)[1]),
+               colour = "#a6ce39",
+               linetype=1) +
+  # 20th century horizontal line
+  geom_segment(aes(x = 1900,
+                   y = unique(oneCity$AverageTempCentury)[2],
+                   xend = 2000,
+                   yend = unique(oneCity$AverageTempCentury)[2]),
+               colour = "#a6ce39") +
+  geom_segment(aes(x = 2000,
+                   y = unique(oneCity$AverageTempCentury)[2],
+                   xend = 2017,
+                   yend = unique(oneCity$AverageTempCentury)[2]),
+               colour = "#6f2c91",
+               linetype=2) +
+  # define colour of points
+  scale_color_viridis_c(option = "magma",
+                        direction = -1,
+                        guide = FALSE) + 
+  # define breaks and labeling on scales
+  scale_x_continuous(name = "",
+                     breaks = c(1900, 1925, 1950, 1975, 2000, 2017)) +
+  scale_y_continuous(name = "",
+                     labels = function(x) scales::number(x = x, suffix = "°")) +
+  # basic styling and font
+  theme_minimal(base_family = "Carlito",
+                base_size = 16)+
+  # labels for horizontal lines
+  annotate(geom = "text",
+           x = 1915,
+           y = unique(oneCity$AverageTempCentury),
+           label = c("20th century average",
+                     "21st century average"),
+           vjust = -1,
+           fontface = 2,
+           size = 4) +
+  labs(title = paste("Average temperature in", i, "(1900-2017)"), 
+       caption = "Source: EdjNet/ECMWF") +
+  theme(plot.caption=element_text(hjust = 0,
+                                  colour = "darkgray")) +
+    coord_cartesian(clip = 'off') +
+# label final temperatures 
+  geom_label_repel(data = oneCity %>%
+                     distinct(century, .keep_all = TRUE) %>%
+                     select(-Date),
+                   mapping = aes(x = 2000,
+                                 y = AverageTempCentury,
+                                 label = scales::number(AverageTempCentury,
+                                                        accuracy = 0.01,
+                                                        suffix = "°")),
+                   nudge_x = c(3, -3),
+                   nudge_y = c(-1,3),
+                   segment.size  = 0.2,
+                   colour = "black") +
+  # draw curved line
+  geom_curve(aes(x = 2000,
+                 y = unique(oneCity$AverageTempCentury)[1],
+                 xend = 2017,
+                 yend = unique(oneCity$AverageTempCentury)[2]),
+             colour = "#6f2c91",
+             linetype=1,
+             curvature = 0.6,
+             arrow =  arrow(length = unit(0.15, "inches"))) +
+   geom_label(data = oneCity %>%
+                distinct(TempDifference, .keep_all = TRUE),
+              mapping = aes(x = 2020,
+                            y = mean(AverageTempCentury),
+                            label = scales::number(TempDifference,
+                                                   accuracy = 0.01,
+                                                   suffix = "°")), colour = "black")
+    
+staticOneCity
+```
+
+## Animate the graph
+
+Thanks to the excellent work done by [Thomas Lin Pedersen](https://twitter.com/thomasp85/) on `gganimate`, it's now a single line of code to animate the above graph.
+
+```{r eval=FALSE, echo=TRUE}
+animatedOneCity <- staticOneCity +
+  transition_reveal(id = City, along = Date)
+```
+
+Again, this is all the code needed to transform the above static graph in the following animated GIF:
+
+```{r animatedOneCity, message=FALSE, echo = FALSE}
+animatedOneCity <- staticOneCity +
+  transition_reveal(id = City, along = Date)
+animate(plot = animatedOneCity +
+  transition_reveal(id = City, along = Date),
+ width = 800, height = 600, res = 120)
+```
+
+
+## Export as high quality video
+
+If you don't like GIF, or you need to include this graph in a video, you can export the same in high quality video formats; thanks to the latest `av` packge by rOpenSci, it's now easy to export the graph in high quality video formats ([see the blog bost announcing the release of the package](https://ropensci.org/technotes/2018/10/06/av-release/)). This is the code needed to export the above animated graph as an high quality mp4.
+
+```{r eval = FALSE, echo=TRUE}
+if(!require("av")) install.packages("av") 
+
+mp4 <- animate(animatedOneCity, renderer = av_renderer('animation.mp4'),
+	width = 1920, height = 1080, res = 250, fps = 25)
+```
+
+## Bulk create graphs
+
+It is now possible to recreate the above graph for all the cities included in the dataset.
+
+If you want to skip the coding, and get the graph for any of the city included in the dataset, [you can find them in this shared folder](https://drive.google.com/drive/folders/1KXYRkWT8D5evzA0vOGPuwRV450qtea_X).
+
+Feel free to use the graphs and the code however you like, as long as you quote the source of the data: [EdjNet](http://europeandatajournalism.eu/)/[One Degree Warmer](https://www.onedegreewarmer.eu/). 
+
+If you want to run the code or tweak the graphs, [you can find the code in this repository](https://github.com/giocomai/OneDegreeWarmer_animated). 
+

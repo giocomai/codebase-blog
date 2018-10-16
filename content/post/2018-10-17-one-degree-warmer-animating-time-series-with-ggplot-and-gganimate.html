@@ -1,0 +1,63 @@
+---
+title: "Animating 'One Degree Warmer' time series with ggplot2 and gganimate"
+author: 'Giorgio Comai'
+date: '2018-10-17'
+slug: one-degree-warmer-animating-time-series-with-ggplot-and-gganimate
+categories: [rstats]
+tags: []
+---
+
+
+
+<p>A couple of weeks ago, the European Data Journalism Network (<a href="http://europeandatajournalism.eu/">EdjNet</a>) released a new dataset including yearly average temperatures between the year 1900 and 2017 for over 500 cities across Europe, and made it possible to find key data on each of them <a href="https://www.onedegreewarmer.eu/">through an interactive web interface</a>. Since these are lenghty and meaningful time series, I decided to use them to test-drive data animation with R with <code>ggplot2</code>+<code>gganimate</code>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<div id="about-the-data" class="section level2">
+<h2>About the data</h2>
+<p>Through the analysis of data made available by the European Centre for Medium-Range Weather Forecasts (ECMWF), and by harmonising historical time series with recent data obtained from a variety of sources (satellite, weather stations, buoys, weather balloons), the resulting time series should be more robust to changes on the ground (e.g. if a weather station was on the outskirt of a city, but then new buildings and roads were built around it, temperatures for more recent years would likely overestimtate the increase in temperature; not with this method). Check out <a href="https://www.europeandatajournalism.eu/eng/News/Data-news/Europe-is-getting-warmer-and-it-s-not-looking-like-it-s-going-to-cool-down-anytime-soon">this piece published on EdjNet</a>’s website, or <a href="https://nbviewer.jupyter.org/urls/pastebin.com/raw/JcA37c2g">check out the code published as a Jupyter Notebook</a> to find out more about all the details of data processing.</p>
+<p>Before diving into the data, here’s a few more details that should be kept in consideration:</p>
+<ul>
+<li>the figure for each city is obtained by averaging out data points for areas of about 80 square kilometers. As a consequence, the data refer to the city <em>and its surroundings</em>, which likely has a substantial impact on the data, in particular for cities that are along the coastline or located next to high mountains.</li>
+<li>throughout the investigation, the authors compare 20th century average data with 21st century average data, so when they say “one degree warmer” they mean that the average temperature for the period 2000-2017 is one degree higher than the average temperature for 1900-1999.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> This is rather unusual, as most reporting on climate breakdown refers to increase in the temparature since “preindustrial levels”, which mostly refers to the second half of the 19th century.<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a> While this choice likely reduces the figure on warming when compared to other studies that refer to “preindustrial levels”, this also means that having the whole time series we can decide to use other cutoff dates, and to compare - for example - the first 30 years of the dataset with the last 30. In this post, I’ll however stick with the original definition.</li>
+</ul>
+<p>A quick note on contents before giving way to the code: in each and all cities included in this investigation the temperature has increased between the 20th and 21st century, in many by more than one degree. Broadly speaking, this seems to be in line with the worrying analysis <a href="https://www.ipcc.ch/report/sr15/">presented by IPCC in early October</a>.</p>
+</div>
+<div id="get-and-clean-the-data" class="section level1">
+<h1>Get and clean the data</h1>
+<p>A <a href="https://docs.google.com/spreadsheets/d/1avuUJmVNljyb2uotHKDGgrG8T74O7CcwG15p0budkH8/edit?usp=sharing">spreadsheet with temperature per year and location has been made available by EdjNet</a>. The data for each city have been published as separate sheets, so I have first downloaded the data as an .xlsx file to speed up processing, and then merged all the data in a <a href="https://github.com/giocomai/OneDegreeWarmer_animated/blob/master/data/temperaturesMerged.csv">single data frame in the long format</a>. <a href="https://docs.google.com/spreadsheets/d/1X5J3GbAKGL5DxwB0aUzAutslHgZ7XFazkVmfQyXhIqM/edit#gid=595233479">Selected indicators for each of the cities has been published in a separate spreadsheet</a>. This second file is not needed to create the graphs included in this post, but it can be useful to check if everything looks in order with the data, or to place the data on a map, as it includes also longitude and latitude for each city.</p>
+<p><strong>N.B.: <a href="https://github.com/giocomai/OneDegreeWarmer_animated">All of the the code is available as a repository on GitHub</a></strong></p>
+<div id="making-a-static-version-of-the-graph" class="section level2">
+<h2>Making a static version of the graph</h2>
+<p>The following graph has been made with <code>ggplot2</code>. Again, you can <a href="https://github.com/giocomai/OneDegreeWarmer_animated/blob/master/OneDegreeWarmer_time_series.Rmd">check out the code at this link</a>. It’s quite a lot of typing, as all graphic components need to be defined separately, but the resulting graph looks nice, and, fundamentally the very same code can be applied to all cities included in the dataset without further changes. This example graph shows Granada, which is the city in Europe were the temperature grew most.</p>
+<p><img src="/post/2018-10-17-one-degree-warmer-animating-time-series-with-ggplot-and-gganimate_files/figure-html/staticOneCity-1.png" width="672" /></p>
+</div>
+<div id="animate-the-graph" class="section level2">
+<h2>Animate the graph</h2>
+<p>Thanks to the excellent work done by <a href="https://twitter.com/thomasp85/">Thomas Lin Pedersen</a> on <code>gganimate</code>, it’s now a single line of code to animate the above graph.</p>
+<pre class="r"><code>animatedOneCity &lt;- staticOneCity +
+  transition_reveal(id = City, along = Date)</code></pre>
+<p>Again, this is all the code needed to transform the above static graph in the following animated GIF:</p>
+<p><img src="/post/2018-10-17-one-degree-warmer-animating-time-series-with-ggplot-and-gganimate_files/figure-html/animatedOneCity-1.gif" /><!-- --></p>
+</div>
+<div id="export-as-high-quality-video" class="section level2">
+<h2>Export as high quality video</h2>
+<p>If you don’t like GIF, or you need to include this graph in a video, you can export the same in high quality video formats; thanks to the latest <code>av</code> packge by rOpenSci, it’s now easy to export the graph in high quality video formats (<a href="https://ropensci.org/technotes/2018/10/06/av-release/">see the blog bost announcing the release of the package</a>). This is the code needed to export the above animated graph as an high quality mp4.</p>
+<pre class="r"><code>if(!require(&quot;av&quot;)) install.packages(&quot;av&quot;) 
+
+mp4 &lt;- animate(animatedOneCity, renderer = av_renderer(&#39;animation.mp4&#39;),
+    width = 1920, height = 1080, res = 250, fps = 25)</code></pre>
+</div>
+<div id="bulk-create-graphs" class="section level2">
+<h2>Bulk create graphs</h2>
+<p>It is now possible to recreate the above graph for all the cities included in the dataset.</p>
+<p>If you want to skip the coding, and get the graph for any of the city included in the dataset, <a href="https://drive.google.com/drive/folders/1KXYRkWT8D5evzA0vOGPuwRV450qtea_X">you can find them in this shared folder</a>.</p>
+<p>Feel free to use the graphs and the code however you like, as long as you quote the source of the data: <a href="http://europeandatajournalism.eu/">EdjNet</a>/<a href="https://www.onedegreewarmer.eu/">One Degree Warmer</a>.</p>
+<p>If you want to run the code or tweak the graphs, <a href="https://github.com/giocomai/OneDegreeWarmer_animated">you can find the code in this repository</a>.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><strong>Disclaimer</strong>: I did not take part to this investigation, but I currently work at <a href="http://balcanicaucaso.org/">OBCT</a>, which is a member of EdjNet.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>Yes, 20th century is actually 1901-2000, but that’s the way the data have been calculated in the original timesheet… in practice, the difference is due to be negligible.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>I use “climate breakdown” instead of “climate change” as I have been persuaded by George Monbiot’s argument that using climate change “<a href="https://twitter.com/novaramedia/status/1049244219611734017">is like calling a foreign invasion ‘unexpected guests’</a>”: the weather changes all the time, but this is not what we are talking about now.<a href="#fnref3" class="footnote-back">↩</a></p></li>
+</ol>
+</div>

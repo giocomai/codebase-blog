@@ -42,8 +42,10 @@ tags: []
 <p>If you don’t like GIF, or you need to include this graph in a video, you can export the same in high quality video formats; thanks to the latest <code>av</code> packge by rOpenSci, it’s now easy to export the graph in high quality video formats (<a href="https://ropensci.org/technotes/2018/10/06/av-release/">see the blog bost announcing the release of the package</a>). This is the code needed to export the above animated graph as an high quality mp4.</p>
 <pre class="r"><code>if(!require(&quot;av&quot;)) install.packages(&quot;av&quot;) 
 
-mp4 &lt;- animate(animatedOneCity, renderer = av_renderer(&#39;animation.mp4&#39;),
-    width = 1920, height = 1080, res = 250, fps = 25)</code></pre>
+animate(animatedOneCity,
+        renderer = av_renderer(&#39;animation.mp4&#39;),
+        width = 1920, height = 1080,
+        res = 250, fps = 25)</code></pre>
 </div>
 <div id="bulk-create-graphs" class="section level2">
 <h2>Bulk create graphs</h2>
@@ -57,7 +59,7 @@ mp4 &lt;- animate(animatedOneCity, renderer = av_renderer(&#39;animation.mp4&#39
 <hr />
 <ol>
 <li id="fn1"><p><strong>Disclaimer</strong>: I did not take part to this investigation, but I currently work at <a href="http://balcanicaucaso.org/">OBCT</a>, which is a member of EdjNet.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>Yes, 20th century is actually 1901-2000, but that’s the way the data have been calculated in the original timesheet… in practice, the difference is due to be negligible.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>Yes, 20th century is actually 1901-2000, but that’s the way the data have been calculated in the original spreadsheet… in practice, the difference is due to be negligible.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 <li id="fn3"><p>I use “climate breakdown” instead of “climate change” as I have been persuaded by George Monbiot’s argument that using climate change “<a href="https://twitter.com/novaramedia/status/1049244219611734017">is like calling a foreign invasion ‘unexpected guests’</a>”: the weather changes all the time, but this is not what we are talking about now.<a href="#fnref3" class="footnote-back">↩</a></p></li>
 </ol>
 </div>

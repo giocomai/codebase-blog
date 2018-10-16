@@ -38,7 +38,7 @@ Through the analysis of data made available by the European Centre for Medium-Ra
 Before diving into the data, here's a few more details that should be kept in consideration:
 
 - the figure for each city is obtained by averaging out data points for areas of about 80 square kilometers. As a consequence, the data refer to the city *and its surroundings*, which likely has a substantial impact on the data, in particular for cities that are along the coastline or located next to high mountains.
-- throughout the investigation, the authors compare 20th century average data with 21st century average data, so when they say "one degree warmer" they mean that the average temperature for the period 2000-2017 is one degree higher than the average temperature for 1900-1999.^[Yes, 20th century is actually 1901-2000, but that's the way the data have been calculated in the original timesheet... in practice, the difference is due to be negligible.] This is rather unusual, as most reporting on climate breakdown refers to increase in the temparature since "preindustrial levels", which mostly refers to the second half of the 19th century.^[I use "climate breakdown" instead of "climate change" as I have been persuaded by George Monbiot's argument that using climate change "[is like calling a foreign invasion 'unexpected guests'](https://twitter.com/novaramedia/status/1049244219611734017)": the weather changes all the time, but this is not what we are talking about now.] While this choice likely reduces the figure on warming when compared to other studies that refer to "preindustrial levels", this also means that having the whole time series we can decide to use other cutoff dates, and to compare - for example - the first 30 years of the dataset with the last 30. In this post, I'll however stick with the original definition. 
+- throughout the investigation, the authors compare 20th century average data with 21st century average data, so when they say "one degree warmer" they mean that the average temperature for the period 2000-2017 is one degree higher than the average temperature for 1900-1999.^[Yes, 20th century is actually 1901-2000, but that's the way the data have been calculated in the original spreadsheet... in practice, the difference is due to be negligible.] This is rather unusual, as most reporting on climate breakdown refers to increase in the temparature since "preindustrial levels", which mostly refers to the second half of the 19th century.^[I use "climate breakdown" instead of "climate change" as I have been persuaded by George Monbiot's argument that using climate change "[is like calling a foreign invasion 'unexpected guests'](https://twitter.com/novaramedia/status/1049244219611734017)": the weather changes all the time, but this is not what we are talking about now.] While this choice likely reduces the figure on warming when compared to other studies that refer to "preindustrial levels", this also means that having the whole time series we can decide to use other cutoff dates, and to compare - for example - the first 30 years of the dataset with the last 30. In this post, I'll however stick with the original definition. 
 
 A quick note on contents before giving way to the code: in each and all cities included in this investigation the temperature has increased between the 20th and 21st century, in many by more than one degree. Broadly speaking, this seems to be in line with the worrying analysis [presented by IPCC in early October](https://www.ipcc.ch/report/sr15/).
 
@@ -251,8 +251,10 @@ If you don't like GIF, or you need to include this graph in a video, you can exp
 ```{r eval = FALSE, echo=TRUE}
 if(!require("av")) install.packages("av") 
 
-mp4 <- animate(animatedOneCity, renderer = av_renderer('animation.mp4'),
-	width = 1920, height = 1080, res = 250, fps = 25)
+animate(animatedOneCity,
+        renderer = av_renderer('animation.mp4'),
+        width = 1920, height = 1080,
+        res = 250, fps = 25)
 ```
 
 ## Bulk create graphs

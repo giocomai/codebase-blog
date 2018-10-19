@@ -30,6 +30,7 @@ library("streamgraph")
 pacman::p_load("plotly")  # interactive graphs
 pacman::p_load("scales") # better labels for static graphs
 pacman::p_load("tidyquant")  # time series
+pacman::p_load("timetk")
 devtools::install_github('rstudio/DT')  # print better tables (development version needed for correct caption positioning)
 library("DT")
 ```
@@ -61,7 +62,7 @@ hc_crisisFullTS <- highchart(type = "stock") %>%
   hc_exporting(enabled = TRUE) %>%
   hc_xAxis(title = "") %>%
   hc_yAxis(title = "") %>% 
-  hc_add_series(name = "Word frequency", data = crisisDF %>% tidyquant::as_xts(date_col = Date), id = "crisis")
+  hc_add_series(name = "Word frequency", data =  timetk::tk_xts(data = crisisDF, date_var = Date), id = "crisis")
 
 widgetframe::frameWidget(hc_crisisFullTS)
 ```

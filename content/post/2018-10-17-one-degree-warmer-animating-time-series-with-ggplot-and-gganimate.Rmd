@@ -229,7 +229,7 @@ staticOneCity
 Thanks to the excellent work done by [Thomas Lin Pedersen](https://twitter.com/thomasp85/) on `gganimate`, it's now a single line of code to animate the above graph.
 
 ```{r eval=FALSE, echo=TRUE}
-animatedOneCity <- staticOneCity +
+staticOneCity +
   transition_reveal(id = City, along = Date)
 ```
 
@@ -243,18 +243,40 @@ animate(plot = animatedOneCity +
  width = 800, height = 600, res = 120)
 ```
 
+This looks nice, but I feel it has one major shortcoming: since the final frame disappears instantly, the viewer has effectively no chance to look at the time series in its entirety. As a workaround, we can extend the range, and tell the animation to run for a few more decades after 2017; since there are not data for later years, we get to see the final frame for longer.^[Visually, this works just nice and is easy to implement, and yet this *is* a workaround. It should be possible to pass a `delay` argument to the renderer, but as far as I can tell this has not (yet?) been documented or implemented.] 
+
+```{r eval=FALSE, echo=TRUE}
+staticOneCity +
+  transition_reveal(id = City,
+                    along = Date,
+                    range = as.numeric(c(1900, 2080)))
+```
+
+```{r animatedOneCityDelay, message=FALSE, echo = FALSE}
+animatedOneCity <- staticOneCity +
+  transition_reveal(id = City,
+                    along = Date,
+                    range = as.numeric(c(1900, 2080)))
+
+animate(plot = animatedOneCity,
+ width = 800, height = 600, res = 120)
+```
+
 
 ## Export as high quality video
 
-If you don't like GIF, or you need to include this graph in a video, you can export the same in high quality video formats; thanks to the latest `av` packge by rOpenSci, it's now easy to export the graph in high quality video formats ([see the blog bost announcing the release of the package](https://ropensci.org/technotes/2018/10/06/av-release/)). This is the code needed to export the above animated graph as an high quality mp4.
+If you don't like GIF, or you need to include this graph in a video clip, you can export the same in high quality video formats; thanks to the latest `av` packge by rOpenSci, it's now easy to export the graph in high quality video formats ([see the blog bost announcing the release of the package](https://ropensci.org/technotes/2018/10/06/av-release/)). This is the code needed to export the above animated graph as an high quality mp4.
 
 ```{r eval = FALSE, echo=TRUE}
 if(!require("av")) install.packages("av") 
 
 animate(animatedOneCity,
         renderer = av_renderer('animation.mp4'),
-        width = 1920, height = 1080,
-        res = 250, fps = 25)
+        width = 1920,
+        height = 1080,
+        res = 250,
+        fps = 25,
+        nframes = 300)
 ```
 
 ## Bulk create graphs
@@ -263,7 +285,11 @@ It is now possible to recreate the above graph for all the cities included in th
 
 If you want to skip the coding, and get the graph for any of the city included in the dataset, [you can find them in this shared folder](https://drive.google.com/drive/folders/1KXYRkWT8D5evzA0vOGPuwRV450qtea_X).
 
-Feel free to use the graphs and the code however you like, as long as you quote the source of the data: [EdjNet](http://europeandatajournalism.eu/)/[One Degree Warmer](https://www.onedegreewarmer.eu/). 
+According to the notice included on the investigation's website:
+
+> "You are free to reuse data, and other resources linked on this site, provided you credit the source, the European Data Journalism Network."
+
+So feel free to use the data, the graphs, and the code however you like, as long as you quote the source: [EdjNet](http://europeandatajournalism.eu/)/[One Degree Warmer](https://www.onedegreewarmer.eu/).
 
 If you want to run the code or tweak the graphs, [you can find the code in this repository](https://github.com/giocomai/OneDegreeWarmer_animated).
 

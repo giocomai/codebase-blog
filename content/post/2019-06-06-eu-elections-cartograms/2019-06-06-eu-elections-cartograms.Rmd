@@ -1,0 +1,171 @@
+---
+title: "eu-elections-cartograms"
+author: "Giorgio Comai"
+date: '2019-06-06'
+output: pdf_document
+slug: eu-elections-cartograms
+tags: []
+categories: []
+---
+
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, cache = TRUE)
+pacman::p_load("tidyverse")
+pacman::p_load("sf")
+pacman::p_load("cartogram")
+pacman::p_load("tmap")
+
+```
+# Europe
+
+```{r}
+# https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/countries
+world_sf <- sf::read_sf("ref-countries-2016-10m.shp/CNTR_RG_10M_2016_4326.shp")
+
+eligible <- read_csv("eligible_voters.csv") %>% 
+  transmute(FID = str_replace(str_replace(iso2t, "GR", "EL"), "GB", "UK"), potential_voters)
+
+world_sf %>% 
+  left_join(eligible, by = "FID") %>% 
+  filter(is.na(potential_voters)==FALSE) %>% 
+  arrange(FID) %>% 
+tm_shape() +
+tm_polygons()
+
+
+```
+
+## Remove remote islands
+
+```{r}
+
+crop_bbox <- c(xmin = -15, ymin = 30, xmax = 180, ymax = 70)
+
+eu_sf <- 
+  world_sf %>% 
+  left_join(eligible, by = "FID") %>% 
+  filter(is.na(potential_voters)==FALSE) %>% 
+  arrange(FID) %>% 
+  sf::st_crop(crop_bbox) 
+
+eu_sf %>% 
+  tm_shape() +
+  tm_polygons()
+
+
+```
+
+
+```{r}
+# carto_area <- cartogram_cont(x = scrutini_regione_geo_original %>% 
+#                                                transmute(desc_reg, area = as.numeric(st_area(scrutini_regione_geo_original))) %>% 
+#                                    group_by(desc_reg) %>% 
+#                                    slice(1),
+#                                  "area",
+#                                  itermax=7
+# )
+
+
+
+carto_elettori <- cartogram_cont(x = sf::as_Spatial(eu_sf),
+                                 "potential_voters",
+                                 itermax=7
+)
+
+
+
+carto_elettori_tm <- carto_elettori %>% 
+  tm_shape()  + 
+  tm_polygons() +
+  tm_layout(title = "EU resized according to people with right to vote",
+            title.size = 5,
+            scale = 1,
+            frame = FALSE)
+
+# carto_votanti <- cartogram_cont(x = scrutini_regione_geo_original %>% 
+#                                                select(desc_reg, vot_t) %>% 
+#                                    group_by(desc_reg) %>% 
+#                                    slice(1),
+#                                  "vot_t",
+#                                  itermax=7
+# )
+# 
+# carto_votanti_tm <- carto_votanti %>% 
+#   tm_shape()  + 
+#   tm_polygons() +
+#   tm_layout(title = "Italy resized according to people who actually voted", frame = FALSE)
+# 
+
+carto_elettori_tm
+```
+
+```{r eval = TRUE}
+carto_elettori_ncont <- cartogram_ncont(x = sf::as_Spatial(eu_sf),
+                                 "potential_voters"
+)
+
+carto_elettori_ncont_tm <- carto_elettori_ncont %>% 
+  tm_shape()  + 
+  tm_polygons() +
+  tm_layout(title = "EU resized according to people with right to vote",
+            title.size = 5,
+            scale = 1,
+            frame = FALSE)
+
+carto_elettori_ncont_tm
+```
+
+
+```{r}
+tm_shape(eu_sf) +
+  tm_borders() +
+  tm_shape(carto_elettori_ncont) + 
+  tm_polygons("potential_voters", style = "jenks") +
+  tm_layout(frame = FALSE)
+```
+
+
+
+```{r eval = FALSE}
+base_votanti_facet <- rbind(carto_area %>%
+        rename(size = area) %>%
+        mutate(tipo = "...its geographic size"),
+      carto_elettori %>% rename(size = ele_t) %>% mutate(tipo = "...people with right to vote"), carto_votanti %>% rename(size = vot_t) %>% mutate(tipo = "...people who actually voted")) %>% 
+  mutate(tipo = forcats::as_factor(tipo)) 
+
+
+base_votanti_facet_tm <- base_votanti_facet %>% 
+  tm_shape()  + 
+  tm_polygons() +
+  tm_facets(by = "tipo", nrow = 1, free.coords = FALSE) +
+  tm_layout(main.title = "Italy sized according to...",
+            main.title.position = "center", 
+            fontfamily = "Roboto Condensed",
+            panel.show = FALSE,
+            panel.label.bg.color = "white",
+            frame = FALSE) +
+  tm_credits(text = levels(base_votanti_facet$tipo),
+             position = c("center", "top"), size = 1)
+base_votanti_facet_tm
+```
+
+
+```{r eval = FALSE}
+
+base_votanti_facet %>%
+ # left_join(morph_nogeo, by = ".frame") %>% 
+ # filter(.frame==50) %>% 
+  ggplot() +
+  geom_sf() +
+  coord_sf(datum = NA) + 
+  theme_void() +
+  theme(legend.title=element_blank(),
+        title = element_text(family = "Roboto Condensed",
+                             hjust = 0.5)) +
+  transition_states(states = tipo, transition_length = 1, state_length = 3) +
+  labs(title = "Italy sized according to...\n{closest_state}") +
+  guides(fill=FALSE)
+
+```
+

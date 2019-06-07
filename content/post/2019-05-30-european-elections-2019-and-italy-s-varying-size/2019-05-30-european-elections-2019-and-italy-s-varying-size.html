@@ -1,0 +1,84 @@
+---
+title: 'European Elections 2019 and Italy''s varying size '
+author: Giorgio Comai
+date: '2019-05-30'
+slug: european-elections-2019-and-italy-s-varying-size
+categories:
+  - rstats
+tags:
+  - dataviz
+  - elections
+  - italy
+---
+
+
+
+<p>Among the many debates that follow elections, one tends to get most attention among data journalists and people with an interest in data visualisation: electoral maps. This is not a purely aesthetic debate, as both newsreaders and political pundits make sense of election results through these maps, reaching often debatable conclusions.</p>
+<p>A common one, for example, is the idea of a “country divided” as highlighted by Giuseppe Sollazzo in <a href="https://medium.com/@puntofisso/le-vere-mappe-delle-elezione-italiane-a0cb89d27d9e">a post focused on maps</a> published after the 2018 election in Italy. Maps with the north of Italy completely green have been common after the latest European elections (see e.g. such maps shown in this <a href="https://medium.com/@alice_corona/elezioni-europee-2019-a-venezia-unondata-di-destra-non-disperiamo-5959811e1101">post by Alice Corona</a>).<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>Another highly criticised but common feature of electoral maps is that of deciding the colour to give to a region based on the party that got most votes, which can be amazingly misleading in votes such as the European elections based on a proportional system; as appears from <a href="https://www.infodata.ilsole24ore.com/2019/05/29/cambiati-colori-dellitalia-voto/?refresh_ce=1">these maps by Filippo Mastroianni</a>, there are more nuances ways to show the distribution of votes.</p>
+<p>Personally, I believe that geofacetting conveys information most accurately in proportional systems, but <a href="https://twitter.com/giocomai/status/971716578269192192">the result is admittedly visually unimpressive</a> and accordingly unlikely to ever get traction in the media.</p>
+{{% twitter "971716578269192192" %}}
+<p>Another aspect that does not get much attention in Europe, but features prominently in debates on US electoral maps, is the question of how to deal with areas with <a href="https://xkcd.com/1939/">different population density</a>.</p>
+{{% twitter "862669407868391424" %}}
+<p>Ultimately, different maps show different things, and different visualisations work best to convey specific features of an election.</p>
+<p>Among the many maps around about the latest European elections, I haven’t seen <a href="https://en.wikipedia.org/wiki/Cartogram">cartograms</a>. They are unlikely to ever be considered the “best” or “most beautiful” electoral maps, but I do feel they convey some information more effettively than other types of visualisations.</p>
+<p>So… get ready to a fancy ride exploring European parliament elections through cartograms!</p>
+<div id="who-has-the-right-to-vote-who-actually-votes" class="section level2">
+<h2>Who has the right to vote, who actually votes</h2>
+<p>The geographic shape of Italy is well known. But if each person occupied the same amount of land, the shape of Italy would be slightly different: densely populated metropolitan areas such as Rome and Milan would appear to be bigger, and relatively sparsely populated regions such as Sardinia would appear to be smaller. How does this play out in time of elections?</p>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>What is this?</p>
+<ul>
+<li>on the left, a map of Italy as we know it</li>
+<li>in the centre, regions keep their location, but are resized according to the number of eligible voters: the map in the centre broadly reflects population density, super-sizing regions with big metropolitan areas (e.g. Lombardia, Lazio, and Campania), and making sparsely populated areas such as Sardinia and Trentino-Alto Adige/South Tyrol look much smaller</li>
+<li>on the right, we see a map based on the number of actual voters. If every actual voter occupied the same amount of land, Italy would more or less have the shape it has on the right. This is what makes for examply Sicily look much smaller than it would otherwise be.</li>
+</ul>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-7-1.gif" /><!-- --></p>
+</div>
+<div id="one-italy-for-each-party" class="section level2">
+<h2>One Italy for each party</h2>
+<p>There are different ways to look at the electoral fortune of different parties. The following maps outline their relative success across Italy’s regions. Each of the maps includes only voters of a given party, and their purpose is to show the geographic distribution of voters for each party.</p>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>These maps show quite clearly, for example, how relatively little consent the 5 star movement enjoys in the north, as well as the fact that Forza Italia is much stronger in the South.</p>
+<p>What if, rather than looking at the share of votes, we look at the number of actual voters for each party? The number of people that they actually convinced to come out and vote for them?</p>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>All the parties struggled to get people from Southern regions to come out and vote for them, but the South remains an important part of the electorate not only for the 5 star movement as well as for Forza Italia. This is much less the case for Partito Democratico. Finally, this map highlights once again how much Lega’s voters are concentrated in the North.</p>
+<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre><code>## Simple feature collection with 20 features and 4 fields
+## geometry type:  MULTIPOLYGON
+## dimension:      XY
+## bbox:           xmin: 313279.3 ymin: 3933846 xmax: 1312016 ymax: 5220292
+## epsg (SRID):    32632
+## proj4string:    +proj=utm +zone=32 +datum=WGS84 +units=m +no_defs
+## # A tibble: 20 x 5
+##    desc_lis       voti  perc desc_reg                              geometry
+##    &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                       &lt;MULTIPOLYGON [m]&gt;
+##  1 LEGA SALVI…  251696  33.9 LIGURIA    (((419418.3 4903958, 419182.1 4904…
+##  2 LEGA SALVI… 2107080  43.4 LOMBARDIA  (((590746.9 5160433, 591103.9 5159…
+##  3 LEGA SALVI…  813005  37.1 PIEMONTE   (((461007.3 5145400, 462000.5 5144…
+##  4 LEGA SALVI…   18525  37.2 VALLE D&#39;A… (((405096.6 5105296, 405237 510523…
+##  5 LEGA SALVI…  759948  33.8 EMILIA-RO… (((582434.3 4990342, 582512.3 4990…
+##  6 LEGA SALVI…  245636  42.6 FRIULI-VE… (((875588.7 5058987, 875622.7 5058…
+##  7 LEGA SALVI…  137739  27.8 TRENTINO-… (((735969.2 5229421, 736093.9 5229…
+##  8 LEGA SALVI… 1234610  49.9 VENETO     (((755322.7 5192263, 755324.6 5192…
+##  9 LEGA SALVI…  793889  32.7 LAZIO      (((766674.7 4598918, 766704.1 4599…
+## 10 LEGA SALVI…  291061  38.0 MARCHE     (((786713.7 4878428, 786796.3 4878…
+## 11 LEGA SALVI…  588727  31.5 TOSCANA    (((664735.6 4684196, 664743.2 4684…
+## 12 LEGA SALVI…  171458  38.2 UMBRIA     (((738175.4 4837961, 738024.6 4837…
+## 13 LEGA SALVI…  205370  35.3 ABRUZZO    (((951304 4701684, 951312.9 470180…
+## 14 LEGA SALVI…   55453  23.3 BASILICATA (((1110545 4554592, 1110804 455436…
+## 15 LEGA SALVI…  164915  22.6 CALABRIA   (((1153020 4469037, 1153591 446813…
+## 16 LEGA SALVI…  419623  19.2 CAMPANIA   (((957099.8 4500293, 957716 450055…
+## 17 LEGA SALVI…   36544  24.3 MOLISE     (((1014552 4655974, 1015883 465528…
+## 18 LEGA SALVI…  403424  25.3 PUGLIA     (((1237457 4530555, 1237458 453054…
+## 19 LEGA SALVI…  135496  27.6 SARDEGNA   (((459227.7 4331064, 459233.6 4331…
+## 20 LEGA SALVI…  319439  20.8 SICILIA    (((1070143 4255975, 1070342 425601…</code></pre>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>For a review of more detailed and more nuanced maps that appeared on print media in Italy, with a particular focus on regional media, don’t miss <a href="https://medium.com/@easyinve/elezioni-e-datajournalism-anche-sulla-carta-basta-un-po-di-coraggio-b81c8f9cb3d4">this post by Isaia Invernizzi</a>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</div>

@@ -543,13 +543,13 @@ tween_state(.data = carto_combo_nogeo %>% filter(desc_lis=="LEGA SALVINI PREMIER
 
 ```{r}
  
-carto_lega_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo %>% 
+carto_lega_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
                                          filter(desc_lis == "LEGA SALVINI PREMIER")) %>%
                                select(voti, perc),
                              "voti",
                              itermax=7)
 
-carto_5stelle_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo %>% 
+carto_5stelle_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
                                          filter(desc_lis == "MOVIMENTO 5 STELLE")) %>%
                                select(voti, perc),
                              "voti",
@@ -568,26 +568,24 @@ morph <- tween_sf(.data = carto_lega_base,
 # carto_combo$colour <- carto_combo$perc, 
 # carto_combo %>% filter(desc_lis=="LEGA SALVINI PREMIER")
 
-
-
-
-
-
-
 ```
 
-```{r combo_animated_solid, eval = FALSE}
+```{r combo_animated_continuous, eval = TRUE}
 
-combo_animated_solid <- morph %>%
-  ggplot(mapping = aes(fill = perc)) +
+combo_animated_continuous <- morph %>%
+  ggplot(mapping = aes(fill = perc/100)) +
   geom_sf() +
   coord_sf(datum = NULL) + 
+  scale_fill_distiller(type = "seq",
+                       palette = "YlGnBu",
+                       direction = 1,
+                       labels = scales::percent) +
   theme_void() +
   theme(legend.title=element_blank()) +
   transition_manual(frames = .frame) +
-  labs(title = "Italy shaped as {if_else(.frame<1300, 'Lega', '5 stelle')}'s voters") 
+  labs(title = "Italy shaped as... {if_else(condition = as.numeric(current_frame)<66, 'Lega Salvini Premier', 'Movimento 5 stelle', missing = '')}'s voters") 
 
-combo_animated_solid
+combo_animated_continuous
 ```
 
 

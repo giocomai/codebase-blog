@@ -173,7 +173,7 @@ carto_votanti_tm <- carto_votanti %>%
 ```{r}
 base_votanti_facet <- rbind(carto_area %>%
         rename(size = area) %>%
-        mutate(tipo = "...its geographic size"),
+        mutate(tipo = "...their geographic size"),
       carto_elettori %>% rename(size = ele_t) %>% mutate(tipo = "...people with right to vote"), carto_votanti %>% rename(size = vot_t) %>% mutate(tipo = "...people who actually voted")) %>% 
   mutate(tipo = forcats::as_factor(tipo)) 
 
@@ -182,7 +182,7 @@ base_votanti_facet_tm <- base_votanti_facet %>%
   tm_shape()  + 
   tm_polygons() +
   tm_facets(by = "tipo", nrow = 1, free.coords = FALSE) +
-  tm_layout(main.title = "Italy sized according to...",
+  tm_layout(main.title = "Italy's regions sized according to...",
             main.title.position = "center", 
             fontfamily = "Roboto Condensed",
             panel.show = FALSE,
@@ -207,7 +207,7 @@ tmap_animation(base_votanti_facet %>%
   tm_shape()  + 
   tm_polygons() +
   tm_facets(along = "tipo", nrow = 1, free.coords = FALSE) +
-  tm_layout(main.title = "Italy sized according to...",
+  tm_layout(main.title = "Italy's regions sized according to...",
             main.title.position = "center", 
             fontfamily = "Roboto Condensed",
             panel.show = FALSE,
@@ -219,7 +219,7 @@ tmap_animation(base_votanti_facet %>%
 ```
   
 
-```{r}
+```{r , fig.width=5, fig.height=5}
 # morph <- tween_sf(.data = base_votanti_facet,
 #                   to = carto_elettori,
 #                   ease = 'cubic-in-out',
@@ -243,14 +243,14 @@ base_votanti_facet %>%
  # left_join(morph_nogeo, by = ".frame") %>% 
  # filter(.frame==50) %>% 
   ggplot() +
-  geom_sf() +
+  geom_sf(size = 0.1) +
   coord_sf(datum = NA) + 
   theme_void() +
   theme(legend.title=element_blank(),
         title = element_text(family = "Roboto Condensed",
                              hjust = 0.5)) +
-  transition_states(states = tipo, transition_length = 1, state_length = 3) +
-  labs(title = "Italy sized according to...\n{closest_state}") +
+  transition_states(states = tipo, transition_length = 1, state_length = 5) +
+  labs(title = "Italy's regions sized according to...\n{closest_state}") +
   guides(fill=FALSE)
 
 
@@ -345,48 +345,6 @@ There are different ways to look at the electoral fortune of different parties. 
 
 
 
-```{r eval = FALSE}
-
-
-partito_facet_tm <- carto_partiti_combo %>% 
-  tm_shape()  + 
-  tm_polygons(col = "perc",
-              palette = "YlGnBu") +
-  tm_facets(by = "tipo", nrow = 2, free.coords = FALSE) +
-  tm_layout(main.title = "Italy's regions sized according to distribution of votes to...",
-            main.title.position = "center", 
-            fontfamily = "Roboto Condensed",
-            panel.show = FALSE,
-            panel.label.bg.color = "white",
-            legend.show = FALSE,
-            legend.position = c("center", "bottom"),
-            legend.stack = "horizontal",
-            frame = FALSE,
-            inner.margins = c(0,0,0.15,0),
-            legend.outside = TRUE) +
-  tm_credits(text = levels(carto_partiti_combo$tipo),
-             position = c("center", "top"), size = 1) 
-
-partito_facet_tm
-```
-
-```{r eval = FALSE, fig.height=2}
-carto_partiti_combo %>% 
-  rename(`Share of votes (percent)` = perc) %>% 
-  tm_shape()  + 
-  tm_polygons(col = "Share of votes (percent)",
-              palette = "YlGnBu") +
-  tm_layout(panel.show = FALSE,
-            panel.label.bg.color = "white",
-            legend.only = TRUE,
-            legend.position = c("center", "top"),
-            legend.title.size = 2,
-            legend.text.fontfamily = "Roboto Condensed",
-            legend.text.size = 1.2,
-            legend.title.fontfamily = "Roboto Condensed",
-            frame = FALSE) 
-```
-
 ```{r}
  carto_partiti_combo %>% 
   ungroup() %>% 
@@ -396,7 +354,8 @@ carto_partiti_combo %>%
  scale_fill_distiller(type = "seq",
                        palette = "YlGnBu",
                        direction = 1,
-                       labels = scales::percent_format(accuracy = 1)) +
+                       labels = scales::percent_format(accuracy = 1),
+                      limits = c(0,0.5)) +
   # scale_fill_brewer(type = "seq",
   #                      palette = "YlGnBu",
   #                      direction = 1) +
@@ -407,7 +366,7 @@ carto_partiti_combo %>%
                              hjust = 0.5),
         text = element_text(family = "Roboto Condensed")) +
   facet_wrap(facets = ~ desc_lis, nrow = 2) +
-  labs(title = "Italy's regions sized according to distribution of votes to...")
+  labs(title = "Italy's regions sized according to share of votes to...")
 ```
 
 
@@ -415,7 +374,7 @@ carto_partiti_combo %>%
 The map shows some aspects that have featured in analyses of the vote, including the geographic specularity of the electoral success of the two ruling parties (Lega and 5 star movement): *Lega* did better in the north, *Movimento 5 stelle* did better in the South.
 
 
-```{r carto_partiti_LEGA_5S_combo_animated}
+```{r carto_partiti_LEGA_5S_combo_animated, fig.width=5, fig.height=5}
 
 carto_partiti_LEGA_5S_combo_animated <- 
   carto_partiti_combo %>% 
@@ -427,7 +386,8 @@ carto_partiti_LEGA_5S_combo_animated <-
  scale_fill_distiller(type = "seq",
                        palette = "YlGnBu",
                        direction = 1,
-                       labels = scales::percent_format(accuracy = 1)) +
+                       labels = scales::percent_format(accuracy = 1),
+                      limits = c(0,0.5)) +
   # scale_fill_brewer(type = "seq",
   #                      palette = "YlGnBu",
   #                      direction = 1) +
@@ -437,7 +397,7 @@ carto_partiti_LEGA_5S_combo_animated <-
         title = element_text(family = "Roboto Condensed",
                              hjust = 0.5)) +
   transition_states(states = desc_lis, transition_length = 1, state_length = 5) +
-  labs(title = "Italy's regions sized according to distribution of votes to...\n{closest_state}")
+  labs(title = "Italy's regions sized according to share of votes to...\n{closest_state}")
 
 
 # desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA" | 
@@ -446,7 +406,7 @@ carto_partiti_LEGA_5S_combo_animated
 
  It also appears how *Partito Democratico* performed best in Tuscany and Emilia-Romagna, and how *Forza Italia* did best in the South.
  
-```{r carto_partiti_PD_FI_animated}
+```{r carto_partiti_PD_FI_animated, fig.width=5, fig.height=5}
 
 carto_partiti_PD_FI_animated <- 
   carto_partiti_combo %>% 
@@ -458,7 +418,8 @@ carto_partiti_PD_FI_animated <-
  scale_fill_distiller(type = "seq",
                        palette = "YlGnBu",
                        direction = 1,
-                       labels = scales::percent_format(accuracy = 1)) +
+                       labels = scales::percent_format(accuracy = 1),
+                      limits = c(0,0.5)) +
   # scale_fill_brewer(type = "seq",
   #                      palette = "YlGnBu",
   #                      direction = 1) +
@@ -468,7 +429,7 @@ carto_partiti_PD_FI_animated <-
         title = element_text(family = "Roboto Condensed",
                              hjust = 0.5)) +
   transition_states(states = desc_lis, transition_length = 1, state_length = 5) +
-  labs(title = "Italy's regions sized according to distribution of votes to...\n{closest_state}")
+  labs(title = "Italy's regions sized according to share of votes to...\n{closest_state}")
 
 
 # desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA"
@@ -527,12 +488,14 @@ carto_FDI_voti <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>%
 
 carto_partiti_combo_voti <- rbind(carto_elettori %>%
         rename(voti = ele_t) %>%
-        mutate(perc = NA, tipo = "...people with the right to vote"),
-        carto_lega_voti %>% transmute(desc_reg, voti, perc,  tipo = "Lega's voters"),
-        carto_5stelle_voti %>% transmute(desc_reg, voti,perc,  tipo = "Movimento 5 stelle's voters"),
-        carto_PD_voti %>% transmute(desc_reg, voti, perc, tipo = "Partito Democratico's voters"),
-        carto_FI_voti %>% transmute(desc_reg, voti,perc,  tipo= "Forza Italia's voters"),
-        carto_FDI_voti %>% transmute(desc_reg, voti,perc,  tipo = "Fratelli d'Italia's voters")) %>% 
+        mutate(perc = 0,
+               tipo = "...people with the right to vote",
+               desc_lis = "(people with right to vote)"),
+        carto_lega_voti %>% transmute(desc_lis, desc_reg, voti, perc,  tipo = "Lega's voters"),
+        carto_5stelle_voti %>% transmute(desc_lis,desc_reg, voti,perc,  tipo = "Movimento 5 stelle's voters"),
+        carto_PD_voti %>% transmute(desc_lis, desc_reg, voti, perc, tipo = "Partito Democratico's voters"),
+        carto_FI_voti %>% transmute(desc_lis,desc_reg, voti,perc,  tipo= "Forza Italia's voters"),
+        carto_FDI_voti %>% transmute(desc_lis, desc_reg, voti,perc,  tipo = "Fratelli d'Italia's voters")) %>% 
   ungroup() %>% 
   mutate(perc_cut = cut_width(perc,
                               width = 10,
@@ -547,6 +510,31 @@ carto_partiti_combo_voti <- rbind(carto_elettori %>%
 
 
 ```{r}
+carto_partiti_combo_voti %>% 
+  ungroup() %>% 
+  mutate(desc_lis = factor(x = desc_lis, levels = c("(people with right to vote)", "LEGA SALVINI PREMIER", "PARTITO DEMOCRATICO", "MOVIMENTO 5 STELLE",  "FORZA ITALIA" , "FRATELLI D'ITALIA" ))) %>% 
+  ggplot(mapping = aes(fill = perc/100)) +
+  geom_sf(size = 0.1) +
+ scale_fill_distiller(type = "seq",
+                       palette = "YlGnBu",
+                       direction = 1,
+                       labels = scales::percent_format(accuracy = 1),
+                      limits = c(0,0.5)) +
+  # scale_fill_brewer(type = "seq",
+  #                      palette = "YlGnBu",
+  #                      direction = 1) +
+  coord_sf(datum = NA) + 
+  theme_void() +
+  theme(legend.title=element_blank(),
+        title = element_text(family = "Roboto Condensed",
+                             hjust = 0.5),
+        text = element_text(family = "Roboto Condensed")) +
+  facet_wrap(facets = ~ desc_lis, nrow = 2) +
+  labs(title = "Italy's regions sized according to distribution of votes to...")
+```
+
+
+```{r eval=FALSE}
 
 
 partito_facet_voti_tm <- carto_partiti_combo_voti %>% 
@@ -573,365 +561,18 @@ partito_facet_voti_tm
 
 
 
-```{r fig.height=2}
-carto_partiti_combo_voti %>% 
-  rename(`Share of votes` = perc_cut) %>% 
-  tm_shape()  + 
-  tm_polygons(col = "Share of votes",
-              palette = "YlGnBu") +
-  tm_layout(panel.show = FALSE,
-            panel.label.bg.color = "white",
-            legend.only = TRUE,
-            legend.position = c("center", "top"),
-            legend.title.size = 2,
-            legend.text.fontfamily = "Roboto Condensed",
-            legend.text.size = 1.2,
-            legend.title.fontfamily = "Roboto Condensed",
-            frame = FALSE) 
-```
-
-
-All the parties struggled to get people from Southern regions to come out and vote for them, but the South remains an important part of the electorate not only for the 5 star movement as well as for Forza Italia. This is much less the case for Partito Democratico. Finally, this map highlights once again how much Lega's voters are concentrated in the North.
+These maps shows how all parties struggled to get people from Southern regions to come out and vote for them, so even parties such as *Movimento 5 stelle* who performed relativelt better in relative terms in the South, end up with a rather even distribution of actual voters across the peninsula. 
 
 
 
+# Cartograms: but why?
 
-
-```{r eval = FALSE}
-colour_reference <- tibble(perc_cut = factor(x = levels(carto_combo$perc_cut), levels =  levels(carto_combo$perc_cut), labels = c("[0%-10%)", "[10%-20%)", "[20%-30%)", "[30%-40%)",  "[40%-50%]"), ordered = TRUE),
-                   colour = RColorBrewer::brewer.pal(n = 5, name = "Purples"))
-
-
-carto_combo_nogeo <- carto_combo %>% 
-  left_join(y = colour_reference, by = "perc_cut") %>% 
-  select(desc_lis, desc_reg, colour)
-
-carto_combo_nogeo$geometry <- NULL
-
-morph_nogeo <- 
-tween_state(.data = carto_combo_nogeo %>% filter(desc_lis=="LEGA SALVINI PREMIER"),
-                  to = carto_combo_nogeo %>% filter(desc_lis=="MOVIMENTO 5 STELLE"),
-                  ease = 'cubic-in-out',
-                  nframes = 100)  %>% 
-  keep_state(30) %>% select(colour, .frame)
-
-#morph_nogeo %>% filter(.frame == 50)
-  
-```
-
-
-
-
-```{r eval = FALSE}
- 
-carto_lega_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
-                                         filter(desc_lis == "LEGA SALVINI PREMIER")) %>%
-                               select(voti, perc),
-                             "voti",
-                             itermax=7)
-
-carto_5stelle_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
-                                         filter(desc_lis == "MOVIMENTO 5 STELLE")) %>%
-                               select(voti, perc),
-                             "voti",
-                             itermax=7)
-
-morph <- tween_sf(.data = carto_lega_base,
-                  to = carto_5stelle_base,
-                  ease = 'cubic-in-out',
-                  nframes = 100)  %>% 
-  keep_state(30)
-
-
-
-combo_animated_continuous <- morph %>%
-  ggplot(mapping = aes(fill = perc/100)) +
-  geom_sf() +
-  coord_sf(datum = NULL) + 
-  scale_fill_distiller(type = "seq",
-                       palette = "YlGnBu",
-                       direction = 1,
-                       labels = scales::percent) +
-  theme_void() +
-  theme(legend.title=element_blank()) +
-  transition_manual(frames = .frame) +
-  labs(title = "Italy shaped as... {if_else(condition = as.numeric(current_frame)<66, 'Lega Salvini Premier', 'Movimento 5 stelle', missing = '')}'s voters") 
-
-combo_animated_continuous
-
-```
-
-  
-# Less votes, less space
-
-All of the above cartograms showed the distribution. 
-
-
-```{r carto_proportional, eval=FALSE}
-
-#pol <- st_sfc(st_polygon(list(cbind(c(0,30,3,20,0),c(0,32,5,25,0)))))
-
-
-complement_place <- function(scrutini, lista, tipo = "voti") {
-  
-  # random distant geometry
-  
-   Moldova <- spData::world %>% filter(name_long == "Moldova") %>% st_transform(32632)
-  
-   st_crs(Moldova) <- "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"
-   
-   perc_rest <- scrutini %>% filter(desc_lis!=lista) %>% pull(perc) %>% sum()
-   voti_rest <- scrutini %>% filter(desc_lis!=lista) %>% pull(voti) %>% sum()
-  
-  mutate(area = st_area(geometry)) %>% 
-  mutate(voti_prop = voti*area, perc_prop = perc*area)
-  rest_sf <- st_sf(tibble(desc_lis = lista, desc_reg = "out",
-                          voti = voti_rest,
-                          perc = perc_rest,
-                          geometry = Moldova$geom))
-  
-  base_with_rest <- rbind(
-    scrutini %>% filter(desc_lis==lista),
-    rest_sf
-  )
-  
-  carto_with_rest <- cartogram_cont(base_with_rest,
-                                    weight = tipo,
-                                    itermax = 25)
-  
-   
-  carto_with_rest
-}
-
-
-carto_combo_prop <- 
-rbind(complement_place(scrutini = scrutini, lista = "LEGA SALVINI PREMIER"),
-      complement_place(scrutini = scrutini, lista = "PARTITO DEMOCRATICO"),
-      complement_place(scrutini = scrutini, lista = "MOVIMENTO 5 STELLE"),
-      complement_place(scrutini = scrutini, lista = "FORZA ITALIA"),
-      complement_place(scrutini = scrutini, lista = "LA SINISTRA"))
-
- 
-carto_combo_prop %>% 
-  tm_shape()  + 
-  tm_polygons() +
-  tm_facets(by = "desc_lis", nrow = 2, free.coords = FALSE, sync = FALSE) +
-  tm_layout(main.title = "Italy sized according to...",
-            main.title.position = "center", 
-            fontfamily = "Roboto Condensed",
-            panel.show = FALSE,
-            panel.label.bg.color = "white",
-            frame = FALSE) 
-
-  
-
-
-```
-
-```{r eval = FALSE}
-  
-  carto_combo_prop %>% 
-    filter(desc_reg!="out") %>% 
-    ggplot() +
-    geom_sf() + 
-    facet_grid(. ~ desc_lis)
-```
-
-
-
-```{r eval = FALSE}
-carto_combo_prop %>% 
-  filter(desc_lis == "LA SINISTRA", desc_reg!="out") %>% 
-  ggplot() +
-  geom_sf()
-```
-
+Cartograms are not the most effective way to present who got elected. But I think they offer a rather effective way to show regional distribution of votes. These cartograms are also one of those cases when animated maps outperform their static counterpart, as they make it easier to compare changes in a given part of the country, and do not require glancing back and forth or comparing what you see with a stereotyped version of what the viewer has in mind. 
 
 
 ```{r eval = FALSE}
 
-  res <- matrix(c(48, 12,
-          48, 11,
-           47.5, 11,
-           47.5, 13,
-          48, 12)  ## need to close the polygon
-         , ncol =2, byrow = TRUE
-  )
-  ## create polygon objects
-pol <- st_sfc(st_polygon(list(res)))
-
-
-
-
- pol <- st_sfc(st_polygon(list(cbind(c(48, 11, 47, 48),c(48, 12, 48, 48)))))
-
+# partly working, parlty not: half baked attempts at different approaches removed from this post, but left in this gist:
+# https://gist.github.com/giocomai/8a33e0f4129557eab79217f8ccf26393
 ```
-
-
-
-```{r eval=FALSE}
-
-
-
-out_lega <- st_sf(tibble(voti = 10000000, perc = (100*length(carto_lega_base$perc)-sum(carto_lega_base$perc)), geometry = pol)) 
-
-st_crs(out_lega) <- "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"
-
-lega_out <- rbind(carto_lega_base,
-                  out_lega
-)
-
-out_5stelle <- st_sf(tibble(voti = 10000000, perc = (100*length(carto_5stelle_base$perc)-sum(carto_5stelle_base$perc)), geometry = pol)) 
-st_crs(out_5stelle) <- "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"
-
-mov5stelle_out <- lega_out <- rbind(carto_5stelle_base,
-                  out_5stelle
-)
-
-combo_out <- 
-rbind(lega_out %>% mutate(tipo = "Lega"),
-      mov5stelle_out%>% mutate(tipo = "5 stelle"))
-
-combo_out %>% 
-  tm_shape()  + 
-  tm_polygons(col = "perc",
-              palette = "YlGnBu") +
-  tm_facets(by = "tipo", nrow = 2, free.coords = FALSE) +
-  tm_layout(main.title = "Italy sized according to...",
-            main.title.position = "center", 
-            fontfamily = "Roboto Condensed",
-            panel.show = FALSE,
-            panel.label.bg.color = "white",
-            legend.show = FALSE,
-            legend.position = c("center", "bottom"),
-            legend.stack = "horizontal",
-            frame = FALSE,
-            inner.margins = c(0,0,0.15,0),
-            legend.outside = TRUE) +
-  tm_credits(text = levels(combo_out$tipo),
-             position = c("center", "top"), size = 1) 
-```
-
-
-
-```{r eval=FALSE}
-crop_bbox <- c(xmin = 50, ymin = 30, xmax = 55, ymax = 40)
-
-sf::st_as_sf(crop_bbox)
-```
-
-
-
-```{r combo_animated_nuanced, eval = FALSE}
-combo_animated_nuanced <- morph %>%
-  left_join(morph_nogeo, by = ".frame") %>% 
- # filter(.frame==50) %>% 
-  ggplot(mapping = aes(fill = colour)) +
-  geom_sf() +
-  coord_sf(datum = NULL) + 
-  theme_void() +
-  theme(legend.title=element_blank()) +
-  transition_manual(frames = .frame) +
-  labs(title = "Italy shaped as {if_else(current_frame<1300, 'Lega', '5 stelle')}'s voters") +
-  guides(fill=FALSE)
-
-
-combo_animated_nuanced
-```
-
-
-```{r message=FALSE, eval = FALSE}
-
-
-
-animated <- rbind(carto_lega, carto_5stelle) %>% 
-  tm_shape()  + 
-  tm_polygons("perc",
-              palette = viridisLite::viridis(20, begin = 0.5, end = 1, direction = -1),
-              style = "quantile") +
-  tm_facets(along = "desc_lis", free.coords = FALSE)
-  tm_layout(frame = FALSE)
-  
-  tmap_animation(tm = animated,filename = "lega_5_stelle.gif",
-                 width = 640,
-                 height = 640,
-                 delay = 25)
-```
-
-
-
-```{r eval = FALSE}
-animated_tweened <- morph %>% 
-  tm_shape()  + 
-  tm_polygons("perc",
-              palette = viridisLite::viridis(20, begin = 0.5, end = 1, direction = -1),
-              style = "quantile") +
-  tm_facets(along = "desc_lis", free.coords = FALSE)
-  tm_layout(frame = FALSE)
-  
-  tmap_animation(tm = animated,filename = "lega_5_stelle_tweened.gif",
-                 width = 640,
-                 height = 640,
-                 delay = 25)
-```
-
-
-```{r eval = FALSE}
-
-carto_lega <- cartogram_cont(sf::st_sf(scrutini_regione_geo %>% 
-                                         filter(desc_lis == "LEGA SALVINI PREMIER")) %>%
-                               select(voti, perc),
-                             "voti",
-                             itermax=7)
-
-plot(carto_lega)
-
-
-# carto_lega_perc <- cartogram_cont(sf::st_sf(scrutini_regione_geo %>% 
-#                                          filter(desc_lis == "LEGA SALVINI PREMIER")) %>%
-#                                select(perc),
-#                              "perc",
-#                              itermax=7)
-# 
-# plot(carto_lega_perc)
-
-
-carto_tutti <- cartogram_cont(sf::st_sf(scrutini_regione_geo) %>%
-                               select(voti, desc_lis),
-                             "voti",
-                             itermax=7)
-
-plot(carto_tutti)
-
-top_6 <- scrutini_regione_geo %>% 
-  group_by(desc_lis) %>% 
-  tally(voti, sort = TRUE) %>% 
-  pull(desc_lis) %>% 
-  head(6)
-
-
-
-carto_tutti <- cartogram_cont(sf::st_sf(scrutini_regione_geo %>% 
-                                          filter(is.element(el = desc_lis, set = top_6))) %>%
-                                select(voti, desc_lis),
-                              "voti",
-                              itermax=7)
-
-plot(carto_tutti)
-
-
-tm_shape(carto_5stelle)  + 
-  tm_polygons("perc_cut",
-              palette = "YlGnBu",
-              style = "quantile") +
-  tm_layout(frame = FALSE)
-
-#tmaptools::palette_explorer()
-
-
-
-
-ggsave(filename = "carto_lega.png", plot = carto_lega)
-```
-
 

@@ -50,6 +50,13 @@ scrutini_regione$geometry <- NULL
 #   distinct() %>% 
 #   summarise(f = sum(vot_f), m = sum(vot_m))
 
+
+
+scrutini <- scrutini_regione_geo_original %>% 
+  select(desc_lis, desc_reg, voti, perc) %>% 
+  mutate(area = st_area(geometry)) %>% 
+  mutate(voti_prop = voti*area, perc_prop = perc*area)
+
 ```
 
 Among the many debates that follow elections, one tends to get most attention among data journalists and people with an interest in data visualisation: electoral maps. This is not a purely aesthetic debate, as both newsreaders and political pundits make sense of election results through these maps, reaching often debatable conclusions.
@@ -254,60 +261,70 @@ base_votanti_facet %>%
 
 ## One Italy for each party
 
+
+
+
+
+
 ```{r message=FALSE}
-carto_lega <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
-                                        filter(is.element(el = desc_lis,
-                                                           set = "LEGA SALVINI PREMIER")) %>% 
-                               select(desc_lis, voti, perc, desc_reg)),
-                             "perc",
+
+
+carto_lega <- cartogram_cont(scrutini %>% 
+                               filter(is.element(el = desc_lis,
+                                                 set = "LEGA SALVINI PREMIER")) %>%
+                               select(desc_lis, voti, perc, desc_reg, perc_prop) %>% 
+                               mutate(perc_prop = as.numeric(perc_prop)),
+                             "perc_prop",
                              itermax=7
   )
 
-carto_5stelle <- cartogram_cont(sf::st_sf( scrutini_regione_geo_original %>% 
-                                        filter(is.element(el = desc_lis,
-                                                           set = "MOVIMENTO 5 STELLE")) %>% 
-                               select(desc_lis, voti, perc, desc_reg)),
-                             "perc",
+carto_5stelle <- cartogram_cont(scrutini %>% 
+                               filter(is.element(el = desc_lis,
+                                                 set = "MOVIMENTO 5 STELLE")) %>%
+                               select(desc_lis, voti, perc, desc_reg, perc_prop) %>% 
+                               mutate(perc_prop = as.numeric(perc_prop)),
+                             "perc_prop",
                              itermax=7
   )
 
-carto_PD <- cartogram_cont(sf::st_sf( scrutini_regione_geo_original %>% 
-                                        filter(is.element(el = desc_lis,
-                                                           set = "PARTITO DEMOCRATICO")) %>% 
-                               select(desc_lis, voti, perc, desc_reg)),
-                             "perc",
+carto_PD <- cartogram_cont(scrutini %>% 
+                               filter(is.element(el = desc_lis,
+                                                 set = "PARTITO DEMOCRATICO")) %>%
+                               select(desc_lis, voti, perc, desc_reg, perc_prop) %>% 
+                               mutate(perc_prop = as.numeric(perc_prop)),
+                             "perc_prop",
                              itermax=7
   )
 
-carto_FI <- cartogram_cont(sf::st_sf( scrutini_regione_geo_original %>% 
-                                        filter(is.element(el = desc_lis,
-                                                           set = "FORZA ITALIA")) %>% 
-                               select(desc_lis, voti, perc, desc_reg)),
-                             "perc",
-                             itermax=7
-  )
-
-carto_FDI <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
-                                        filter(is.element(el = desc_lis,
-                                                           set = "FRATELLI D'ITALIA")) %>% 
-                               select(desc_lis, voti, perc, desc_reg)),
-                             "perc",
+carto_FI <- cartogram_cont(scrutini %>% 
+                               filter(is.element(el = desc_lis,
+                                                 set =  "FORZA ITALIA")) %>%
+                               select(desc_lis, voti, perc, desc_reg, perc_prop) %>% 
+                               mutate(perc_prop = as.numeric(perc_prop)),
+                             "perc_prop",
                              itermax=7
   )
 
 
 
-
+carto_FDI <- cartogram_cont(scrutini %>% 
+                               filter(is.element(el = desc_lis,
+                                                 set =  "FRATELLI D'ITALIA")) %>%
+                               select(desc_lis, voti, perc, desc_reg, perc_prop) %>% 
+                               mutate(perc_prop = as.numeric(perc_prop)),
+                             "perc_prop",
+                             itermax=7
+  )
 
 
 carto_partiti_combo <- rbind(carto_area %>%
         rename(voti = area) %>%
-        mutate(perc = NA, tipo = "...its geographic size"),
-        carto_lega %>% transmute(desc_reg, voti, perc,  tipo = "Lega's share of votes"),
-        carto_5stelle %>% transmute(desc_reg, voti,perc,  tipo = "Movimento 5 stelle's share of votes"),
-        carto_PD %>% transmute(desc_reg, voti, perc, tipo = "Partito Democratico's share of votes"),
-        carto_FI %>% transmute(desc_reg, voti,perc,  tipo= "Forza Italia's share of votes"),
-        carto_FDI %>% transmute(desc_reg, voti,perc,  tipo = "Fratelli d'Italia's share of votes")) %>% 
+        mutate(desc_lis = "", perc = 0, tipo = ""),
+        carto_lega %>% transmute(desc_lis, desc_reg, voti, perc,  tipo = "Lega's share of votes"),
+        carto_5stelle %>% transmute(desc_lis, desc_reg, voti,perc,  tipo = "Movimento 5 stelle's share of votes"),
+        carto_PD %>% transmute(desc_lis, desc_reg, voti, perc, tipo = "Partito Democratico's share of votes"),
+        carto_FI %>% transmute(desc_lis, desc_reg, voti,perc,  tipo= "Forza Italia's share of votes"),
+        carto_FDI %>% transmute(desc_lis, desc_reg, voti,perc,  tipo = "Fratelli d'Italia's share of votes")) %>% 
   ungroup() %>% 
   mutate(perc_cut = cut_width(perc,
                               width = 10,
@@ -323,20 +340,20 @@ carto_partiti_combo <- rbind(carto_area %>%
 
 
 
-There are different ways to look at the electoral fortune of different parties. The following maps outline their relative success across Italy's regions. Each of the maps includes only voters of a given party, and their purpose is to show the geographic distribution of voters for each party.
+There are different ways to look at the electoral fortune of different parties. The following maps outline their relative success across Italy's regions. Each of the maps includes only voters of a given party, and their purpose is to show the geographic distribution of voters for each party. If a list had exactly the same percentage of votes in each region, the relative would look exactly like the geographic Italy we all know.
 
 
 
 
-```{r}
+```{r eval = FALSE}
 
 
 partito_facet_tm <- carto_partiti_combo %>% 
   tm_shape()  + 
-  tm_polygons(col = "perc_cut",
+  tm_polygons(col = "perc",
               palette = "YlGnBu") +
   tm_facets(by = "tipo", nrow = 2, free.coords = FALSE) +
-  tm_layout(main.title = "Italy's regions sized according to...",
+  tm_layout(main.title = "Italy's regions sized according to distribution of votes to...",
             main.title.position = "center", 
             fontfamily = "Roboto Condensed",
             panel.show = FALSE,
@@ -353,11 +370,11 @@ partito_facet_tm <- carto_partiti_combo %>%
 partito_facet_tm
 ```
 
-```{r fig.height=2}
+```{r eval = FALSE, fig.height=2}
 carto_partiti_combo %>% 
-  rename(`Share of votes` = perc_cut) %>% 
+  rename(`Share of votes (percent)` = perc) %>% 
   tm_shape()  + 
-  tm_polygons(col = "Share of votes",
+  tm_polygons(col = "Share of votes (percent)",
               palette = "YlGnBu") +
   tm_layout(panel.show = FALSE,
             panel.label.bg.color = "white",
@@ -370,31 +387,95 @@ carto_partiti_combo %>%
             frame = FALSE) 
 ```
 
-These maps show quite clearly, for example, how relatively little consent the 5 star movement enjoys in the north, as well as the fact that Forza Italia is much stronger in the South. 
+```{r}
+ carto_partiti_combo %>% 
+  ungroup() %>% 
+  mutate(desc_lis = factor(x = desc_lis, levels = c("", "LEGA SALVINI PREMIER", "PARTITO DEMOCRATICO", "MOVIMENTO 5 STELLE",  "FORZA ITALIA" , "FRATELLI D'ITALIA" ))) %>% 
+  ggplot(mapping = aes(fill = perc/100)) +
+  geom_sf(size = 0.1) +
+ scale_fill_distiller(type = "seq",
+                       palette = "YlGnBu",
+                       direction = 1,
+                       labels = scales::percent_format(accuracy = 1)) +
+  # scale_fill_brewer(type = "seq",
+  #                      palette = "YlGnBu",
+  #                      direction = 1) +
+  coord_sf(datum = NA) + 
+  theme_void() +
+  theme(legend.title=element_blank(),
+        title = element_text(family = "Roboto Condensed",
+                             hjust = 0.5),
+        text = element_text(family = "Roboto Condensed")) +
+  facet_wrap(facets = ~ desc_lis, nrow = 2) +
+  labs(title = "Italy's regions sized according to distribution of votes to...")
+```
 
 
 
+The map shows some aspects that have featured in analyses of the vote, including the geographic specularity of the electoral success of the two ruling parties (Lega and 5 star movement): *Lega* did better in the north, *Movimento 5 stelle* did better in the South.
 
-```{r carto_partiti_combo_animated}
 
-carto_partiti_voters_combo_animated <- 
+```{r carto_partiti_LEGA_5S_combo_animated}
+
+carto_partiti_LEGA_5S_combo_animated <- 
   carto_partiti_combo %>% 
-  select(-perc, -perc_cut) %>% 
-  ggplot() +
-  geom_sf() +
+  ungroup() %>% 
+  filter(desc_lis ==  "LEGA SALVINI PREMIER" | desc_lis == "MOVIMENTO 5 STELLE") %>% 
+  
+  ggplot(mapping = aes(fill = perc/100)) +
+  geom_sf(size = 0.1) +
+ scale_fill_distiller(type = "seq",
+                       palette = "YlGnBu",
+                       direction = 1,
+                       labels = scales::percent_format(accuracy = 1)) +
+  # scale_fill_brewer(type = "seq",
+  #                      palette = "YlGnBu",
+  #                      direction = 1) +
   coord_sf(datum = NA) + 
   theme_void() +
   theme(legend.title=element_blank(),
         title = element_text(family = "Roboto Condensed",
                              hjust = 0.5)) +
-  transition_states(states = tipo, transition_length = 1, state_length = 3) +
-  labs(title = "Italy sized according to...\n{closest_state}") +
-  guides(fill=FALSE)
+  transition_states(states = desc_lis, transition_length = 1, state_length = 5) +
+  labs(title = "Italy's regions sized according to distribution of votes to...\n{closest_state}")
 
-#carto_partiti_voters_combo_animated
+
+# desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA" | 
+carto_partiti_LEGA_5S_combo_animated
 ```
 
+ It also appears how *Partito Democratico* performed best in Tuscany and Emilia-Romagna, and how *Forza Italia* did best in the South.
+ 
+```{r carto_partiti_PD_FI_animated}
 
+carto_partiti_PD_FI_animated <- 
+  carto_partiti_combo %>% 
+  ungroup() %>% 
+  filter(desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA") %>% 
+  
+  ggplot(mapping = aes(fill = perc/100)) +
+  geom_sf(size=0.1) +
+ scale_fill_distiller(type = "seq",
+                       palette = "YlGnBu",
+                       direction = 1,
+                       labels = scales::percent_format(accuracy = 1)) +
+  # scale_fill_brewer(type = "seq",
+  #                      palette = "YlGnBu",
+  #                      direction = 1) +
+  coord_sf(datum = NA) + 
+  theme_void() +
+  theme(legend.title=element_blank(),
+        title = element_text(family = "Roboto Condensed",
+                             hjust = 0.5)) +
+  transition_states(states = desc_lis, transition_length = 1, state_length = 5) +
+  labs(title = "Italy's regions sized according to distribution of votes to...\n{closest_state}")
+
+
+# desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA"
+carto_partiti_PD_FI_animated
+```
+ 
+ 
 
 What if, rather than looking at the share of votes, we look at the number of actual voters for each party? The number of people that they actually convinced to come out and vote for them?
 
@@ -541,7 +622,7 @@ tween_state(.data = carto_combo_nogeo %>% filter(desc_lis=="LEGA SALVINI PREMIER
 
 
 
-```{r}
+```{r eval = FALSE}
  
 carto_lega_base <- cartogram_cont(sf::st_sf(scrutini_regione_geo_original %>% 
                                          filter(desc_lis == "LEGA SALVINI PREMIER")) %>%
@@ -561,16 +642,7 @@ morph <- tween_sf(.data = carto_lega_base,
                   nframes = 100)  %>% 
   keep_state(30)
 
-# pacman::p_load("RColorBrewer")
-# 
-# 
-# 
-# carto_combo$colour <- carto_combo$perc, 
-# carto_combo %>% filter(desc_lis=="LEGA SALVINI PREMIER")
 
-```
-
-```{r combo_animated_continuous, eval = TRUE}
 
 combo_animated_continuous <- morph %>%
   ggplot(mapping = aes(fill = perc/100)) +
@@ -586,6 +658,166 @@ combo_animated_continuous <- morph %>%
   labs(title = "Italy shaped as... {if_else(condition = as.numeric(current_frame)<66, 'Lega Salvini Premier', 'Movimento 5 stelle', missing = '')}'s voters") 
 
 combo_animated_continuous
+
+```
+
+  
+# Less votes, less space
+
+All of the above cartograms showed the distribution. 
+
+
+```{r carto_proportional, eval=FALSE}
+
+#pol <- st_sfc(st_polygon(list(cbind(c(0,30,3,20,0),c(0,32,5,25,0)))))
+
+
+complement_place <- function(scrutini, lista, tipo = "voti") {
+  
+  # random distant geometry
+  
+   Moldova <- spData::world %>% filter(name_long == "Moldova") %>% st_transform(32632)
+  
+   st_crs(Moldova) <- "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"
+   
+   perc_rest <- scrutini %>% filter(desc_lis!=lista) %>% pull(perc) %>% sum()
+   voti_rest <- scrutini %>% filter(desc_lis!=lista) %>% pull(voti) %>% sum()
+  
+  mutate(area = st_area(geometry)) %>% 
+  mutate(voti_prop = voti*area, perc_prop = perc*area)
+  rest_sf <- st_sf(tibble(desc_lis = lista, desc_reg = "out",
+                          voti = voti_rest,
+                          perc = perc_rest,
+                          geometry = Moldova$geom))
+  
+  base_with_rest <- rbind(
+    scrutini %>% filter(desc_lis==lista),
+    rest_sf
+  )
+  
+  carto_with_rest <- cartogram_cont(base_with_rest,
+                                    weight = tipo,
+                                    itermax = 25)
+  
+   
+  carto_with_rest
+}
+
+
+carto_combo_prop <- 
+rbind(complement_place(scrutini = scrutini, lista = "LEGA SALVINI PREMIER"),
+      complement_place(scrutini = scrutini, lista = "PARTITO DEMOCRATICO"),
+      complement_place(scrutini = scrutini, lista = "MOVIMENTO 5 STELLE"),
+      complement_place(scrutini = scrutini, lista = "FORZA ITALIA"),
+      complement_place(scrutini = scrutini, lista = "LA SINISTRA"))
+
+ 
+carto_combo_prop %>% 
+  tm_shape()  + 
+  tm_polygons() +
+  tm_facets(by = "desc_lis", nrow = 2, free.coords = FALSE, sync = FALSE) +
+  tm_layout(main.title = "Italy sized according to...",
+            main.title.position = "center", 
+            fontfamily = "Roboto Condensed",
+            panel.show = FALSE,
+            panel.label.bg.color = "white",
+            frame = FALSE) 
+
+  
+
+
+```
+
+```{r eval = FALSE}
+  
+  carto_combo_prop %>% 
+    filter(desc_reg!="out") %>% 
+    ggplot() +
+    geom_sf() + 
+    facet_grid(. ~ desc_lis)
+```
+
+
+
+```{r eval = FALSE}
+carto_combo_prop %>% 
+  filter(desc_lis == "LA SINISTRA", desc_reg!="out") %>% 
+  ggplot() +
+  geom_sf()
+```
+
+
+
+```{r eval = FALSE}
+
+  res <- matrix(c(48, 12,
+          48, 11,
+           47.5, 11,
+           47.5, 13,
+          48, 12)  ## need to close the polygon
+         , ncol =2, byrow = TRUE
+  )
+  ## create polygon objects
+pol <- st_sfc(st_polygon(list(res)))
+
+
+
+
+ pol <- st_sfc(st_polygon(list(cbind(c(48, 11, 47, 48),c(48, 12, 48, 48)))))
+
+```
+
+
+
+```{r eval=FALSE}
+
+
+
+out_lega <- st_sf(tibble(voti = 10000000, perc = (100*length(carto_lega_base$perc)-sum(carto_lega_base$perc)), geometry = pol)) 
+
+st_crs(out_lega) <- "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"
+
+lega_out <- rbind(carto_lega_base,
+                  out_lega
+)
+
+out_5stelle <- st_sf(tibble(voti = 10000000, perc = (100*length(carto_5stelle_base$perc)-sum(carto_5stelle_base$perc)), geometry = pol)) 
+st_crs(out_5stelle) <- "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs"
+
+mov5stelle_out <- lega_out <- rbind(carto_5stelle_base,
+                  out_5stelle
+)
+
+combo_out <- 
+rbind(lega_out %>% mutate(tipo = "Lega"),
+      mov5stelle_out%>% mutate(tipo = "5 stelle"))
+
+combo_out %>% 
+  tm_shape()  + 
+  tm_polygons(col = "perc",
+              palette = "YlGnBu") +
+  tm_facets(by = "tipo", nrow = 2, free.coords = FALSE) +
+  tm_layout(main.title = "Italy sized according to...",
+            main.title.position = "center", 
+            fontfamily = "Roboto Condensed",
+            panel.show = FALSE,
+            panel.label.bg.color = "white",
+            legend.show = FALSE,
+            legend.position = c("center", "bottom"),
+            legend.stack = "horizontal",
+            frame = FALSE,
+            inner.margins = c(0,0,0.15,0),
+            legend.outside = TRUE) +
+  tm_credits(text = levels(combo_out$tipo),
+             position = c("center", "top"), size = 1) 
+```
+
+
+
+```{r eval=FALSE}
+crop_bbox <- c(xmin = 50, ymin = 30, xmax = 55, ymax = 40)
+
+sf::st_as_sf(crop_bbox)
 ```
 
 
@@ -605,31 +837,6 @@ combo_animated_nuanced <- morph %>%
 
 
 combo_animated_nuanced
-```
-
-
-
-
-```{r}
-morph %>%
-  ggplot() +
-  geom_sf() +
- coord_sf(datum = NULL) + 
-  theme_void()
-```
-
-
-
-```{r}
-
-carto_lega_graph <- 
-  tm_shape(carto_lega)  + 
-  tm_polygons("perc",
-              palette = viridisLite::viridis(20, begin = 0.5, end = 1, direction = -1),
-              style = "quantile") +
-  tm_layout(frame = FALSE)
-
-carto_lega
 ```
 
 
@@ -727,14 +934,4 @@ tm_shape(carto_5stelle)  +
 ggsave(filename = "carto_lega.png", plot = carto_lega)
 ```
 
-
-
-```{r eval = FALSE}
-
-tm_shape(carto_combo %>% filter(desc_lis=="MOVIMENTO 5 STELLE"))  + 
-  tm_polygons("perc_cut",
-              palette = "YlGnBu",
-              style = "quantile") +
-  tm_layout(frame = FALSE)
-```
 

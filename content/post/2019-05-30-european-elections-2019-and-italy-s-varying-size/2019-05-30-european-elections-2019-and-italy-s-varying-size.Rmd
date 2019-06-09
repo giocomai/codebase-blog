@@ -340,7 +340,7 @@ carto_partiti_combo <- rbind(carto_area %>%
 
 
 
-There are different ways to look at the electoral fortune of different parties. The following maps outline their relative success across Italy's regions. Each of the maps includes only voters of a given party, and their purpose is to show the geographic distribution of voters for each party. If a list had exactly the same percentage of votes in each region, the relative would look exactly like the geographic Italy we all know.
+There are different ways to look at the electoral fortune of different parties. The following maps outline their relative success across Italy's regions. Each of the maps includes only voters of a given party, and their purpose is to show the geographic distribution of voters for each party. If a list had exactly the same percentage of votes in each region, its map would look exactly like the geographic Italy we all know.
 
 
 
@@ -366,7 +366,7 @@ There are different ways to look at the electoral fortune of different parties. 
                              hjust = 0.5),
         text = element_text(family = "Roboto Condensed")) +
   facet_wrap(facets = ~ desc_lis, nrow = 2) +
-  labs(title = "Italy's regions sized according to share of votes to...")
+  labs(title = "Italy's regions sized according to distribution of votes to...")
 ```
 
 
@@ -397,7 +397,7 @@ carto_partiti_LEGA_5S_combo_animated <-
         title = element_text(family = "Roboto Condensed",
                              hjust = 0.5)) +
   transition_states(states = desc_lis, transition_length = 1, state_length = 5) +
-  labs(title = "Italy's regions sized according to share of votes to...\n{closest_state}")
+  labs(title = "Italy's regions sized according to distribution of votes to...\n{closest_state}")
 
 
 # desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA" | 
@@ -429,7 +429,7 @@ carto_partiti_PD_FI_animated <-
         title = element_text(family = "Roboto Condensed",
                              hjust = 0.5)) +
   transition_states(states = desc_lis, transition_length = 1, state_length = 5) +
-  labs(title = "Italy's regions sized according to share of votes to...\n{closest_state}")
+  labs(title = "Italy's regions sized according to distribution of votes to...\n{closest_state}")
 
 
 # desc_lis == "PARTITO DEMOCRATICO" |desc_lis == "FORZA ITALIA"
@@ -561,7 +561,7 @@ partito_facet_voti_tm
 
 
 
-These maps shows how all parties struggled to get people from Southern regions to come out and vote for them, so even parties such as *Movimento 5 stelle* who performed relativelt better in relative terms in the South, end up with a rather even distribution of actual voters across the peninsula. 
+These maps shows how all parties struggled to get people from Southern regions to come out and vote for them, so even parties such as *Movimento 5 stelle* who performed better in relative terms in the South, end up with a rather even distribution of actual voters across the peninsula. 
 
 
 

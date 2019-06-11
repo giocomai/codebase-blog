@@ -1,7 +1,7 @@
 ---
 title: 'European Elections 2019 and Italy''s varying size '
 author: Giorgio Comai
-date: '2019-05-30'
+date: '2019-06-11'
 slug: european-elections-2019-and-italy-s-varying-size
 categories:
   - rstats
@@ -26,25 +26,25 @@ tags:
 <div id="who-has-the-right-to-vote-who-actually-votes" class="section level2">
 <h2>Who has the right to vote, who actually votes</h2>
 <p>The geographic shape of Italy is well known. But if each person occupied the same amount of land, the shape of Italy would be slightly different: densely populated metropolitan areas such as Rome and Milan would appear to be bigger, and relatively sparsely populated regions such as Sardinia would appear to be smaller. How does this play out in time of elections?</p>
-<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="/post/2019-06-11-european-elections-2019-and-italy-s-varying-size/2019-06-11-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 <p>What is this?</p>
 <ul>
 <li>on the left, a map of Italy as we know it</li>
 <li>in the centre, regions keep their location, but are resized according to the number of eligible voters: the map in the centre broadly reflects population density, super-sizing regions with big metropolitan areas (e.g. Lombardia, Lazio, and Campania), and making sparsely populated areas such as Sardinia and Trentino-Alto Adige/South Tyrol look much smaller</li>
 <li>on the right, we see a map based on the number of actual voters. If every actual voter occupied the same amount of land, Italy would more or less have the shape it has on the right. Low turnout is what makes for example Sicily look much smaller than it would otherwise be.</li>
 </ul>
-<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-7-1.gif" /><!-- --></p>
+<p><img src="/post/2019-06-11-european-elections-2019-and-italy-s-varying-size/2019-06-11-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-7-1.gif" /><!-- --></p>
 </div>
 <div id="one-italy-for-each-party" class="section level2">
 <h2>One Italy for each party</h2>
 <p>There are different ways to look at the electoral fortune of different parties. The following maps outline their relative success across Italy’s regions. Each of the maps includes only voters of a given party, and their purpose is to show the geographic distribution of voters for each party. To clarify: if a list had exactly the same percentage of votes in each region, its map would look exactly like the geographic Italy we all know.</p>
-<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="/post/2019-06-11-european-elections-2019-and-italy-s-varying-size/2019-06-11-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <p>The map shows some aspects that have featured in analyses of the vote, including the geographic specularity of the electoral success of the two ruling parties): <em>Lega</em> did better in the north, <em>Movimento 5 stelle</em> did better in the South.</p>
-<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/carto_partiti_LEGA_5S_combo_animated-1.gif" /><!-- --></p>
+<p><img src="/post/2019-06-11-european-elections-2019-and-italy-s-varying-size/2019-06-11-european-elections-2019-and-italy-s-varying-size_files/figure-html/carto_partiti_LEGA_5S_combo_animated-1.gif" /><!-- --></p>
 <p>It also appears how <em>Partito Democratico</em> performed best in Tuscany and Emilia-Romagna, and how <em>Forza Italia</em> did best in the South.</p>
-<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/carto_partiti_PD_FI_animated-1.gif" /><!-- --></p>
+<p><img src="/post/2019-06-11-european-elections-2019-and-italy-s-varying-size/2019-06-11-european-elections-2019-and-italy-s-varying-size_files/figure-html/carto_partiti_PD_FI_animated-1.gif" /><!-- --></p>
 <p>What if, rather than looking at the share of votes, we look at the number of actual voters for each party? The number of people that they actually convinced to come out and vote for them?</p>
-<p><img src="/post/2019-05-30-european-elections-2019-and-italy-s-varying-size/2019-05-30-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="/post/2019-06-11-european-elections-2019-and-italy-s-varying-size/2019-06-11-european-elections-2019-and-italy-s-varying-size_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 <p>These maps shows how all parties struggled to get people from Southern regions to come out and vote for them, so even parties such as <em>Movimento 5 stelle</em> who performed better in relative terms in the South, end up with a rather even distribution of actual voters across the peninsula.</p>
 </div>
 <div id="cartograms-but-why" class="section level1">
@@ -52,6 +52,11 @@ tags:
 <p>Cartograms are not the most effective way to present who got elected. They are straightforward and complicated at the same time: they istinctively make sense, yet detailed explanations are needed to clarify what exactly is going on.</p>
 <p>These cartograms are also one of those cases when animated maps outperform their static counterpart, as they make it easier to compare changes in a given part of the country, and do not require glancing back and forth.</p>
 <p>Overall, they offer a rather effective and intuitive way to show regional distribution of votes. Should we be seing more of them?</p>
+<div id="source-code-and-data" class="section level3">
+<h3>Source code and data</h3>
+<p>Electoral results have been elaborated starting from data by Italy’s Interior Ministry as <a href="https://github.com/giocomai/elezioni_europee_2019_italia_csv">detailed in this repository</a>. <a href="http://www.istat.it/storage/cartografia/confini_amministrativi/generalizzati/Limiti01012019_g.zip">Shape files for Italian regions</a> have been taken from Italy’s statistical office ISTAT. The R source code that generates this post and all the maps <a href="https://github.com/giocomai/codebase-blog/tree/master/content/post/2019-06-11-european-elections-2019-and-italy-s-varying-size">is available on GitHub</a>.</p>
+<p>You are free to re-publish or adapt these maps. If you do, you are kindly invited to acknowledge the source - Giorgio Comai (OBCT/EDJNet) - and include a link to this post if pertinent.</p>
+</div>
 </div>
 <div class="footnotes">
 <hr />

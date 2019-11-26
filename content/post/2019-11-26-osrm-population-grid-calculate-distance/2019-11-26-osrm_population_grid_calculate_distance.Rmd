@@ -12,7 +12,8 @@ tags:
   - openstreetmap
   - elections
 ---
-  
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library("tidyverse")
@@ -79,7 +80,7 @@ ggplot(sf::st_transform(x = world, crs = 4326)) +
 
 Indeed, it took me about 25 minutes on a rainy Sunday to drive my wife to a polling station from the small village in the Italian Alps where I live.
 
-![Sectia de vot](sectia.jpg)
+![A polling station in Trentino](/img/sectia.jpg)
 
 Looking at the density of polling stations in Italy on a map, I had the feeling that I was not exceptionally lucky, and that indeed many Romanian voters in Italy had a polling station within relatively easy reach. Or... was I? How far was the average Italian resident from a Romanian polling station on 24 November 2019? I decided to find out.  
 
@@ -450,11 +451,11 @@ ggmap(base_tn_sw) +
 
 Indeed, it takes about 10 minutes less to reach the polling station North of Trento than the one in Rovereto; by road, it's also about 7 km closer.
 
-Now, if we had to answer this question only for the good folks of Vigo Cavine, then we could just use Google Maps, or ask around, for that matter. The problem is that we want to find this figure for all `r scales::number(nrow(grid_combo_it_longlat))` one-km cells of the Italian population grid. Since we cannot take for granted that "the closest" is also "the easiest to reach", it means that we should make more than query for each grid cell. Even if we check, say, for the 5 closest polling stations, that makes `r scales::number(nrow(grid_combo_it_longlat)*5)` queries. The lovely folks at Google charge [5 US dollars for each 1000 requests](https://cloud.google.com/maps-platform/pricing/), which means... let me add up the numbers... `r scales::number(nrow(grid_combo_it_longlat)*5/1000*5)` USD.
+Now, if we had to answer this question only for the good folks of Vigo Cavine, then we could just use Google Maps, or ask around, for that matter. The problem is that we want to find this figure for all `r scales::number(nrow(grid_combo_it_longlat))` one-km cells of the Italian population grid. Since we cannot take for granted that "the closest" is also "the easiest to reach", it means that we should make more than one query for each grid cell. Even if we check, say, for the 5 closest polling stations, that makes `r scales::number(nrow(grid_combo_it_longlat)*5)` queries. The lovely folks at Google charge [5 US dollars for each 1000 requests](https://cloud.google.com/maps-platform/pricing/), which means... let me add up the numbers... `r scales::number(nrow(grid_combo_it_longlat)*5/1000*5)` USD.
 
 Not bad. But perhaps a bit on the expensive side of things for a rainy Sunday afternoon curiosity?
 
-OpenStreetMaps, which is reasonably complete in terms of road connections in Italy, comes to the rescue. Unfortunately, there's no OpenStreetMaps service that will let me make hundreds of thousands of queries for free, but hey, it's open. I installed on my own laptop [OSRM, the OpenStreetMap routing machine](http://project-osrm.org/), downloaded the data for Italy, prepared them for routing, and... off we go.^[OSRM documentation is not too bad and it's easy to install in a just a few command lines... they suggest to run OSRM in Docker, but I found it easier to deal with RAM issues just running it from the host. Preparing country-level data for routing may well take an hour or more, and you need to have about 10GB of RAM for a country the size of Italy (doing this with a Europe-wide map may not be a viable option on most consumer hardware). Downloading and extracting the data is just four lines of code, you find them in the full code version of this post.]
+OpenStreetMap, which is reasonably complete in terms of road connections in Italy, comes to the rescue. Unfortunately, there's no OpenStreetMap service that will let me make hundreds of thousands of queries for free, but hey, it's open. I installed on my own laptop [OSRM, the OpenStreetMap routing machine](http://project-osrm.org/), downloaded the data for Italy (thanks OpenStreetMap contributors!), prepared them for routing, and... off we go.^[OSRM documentation is not too bad and it's easy to install in a just a few command lines... they suggest to run OSRM in Docker, but I found it easier to deal with RAM issues just running it from the host. Preparing country-level data for routing may well take an hour or more, and you need to have about 10GB of RAM for a country the size of Italy (doing this with a Europe-wide map may not be a viable option on most consumer hardware). Downloading and extracting the data is just four lines of code, you find them in the full code version of this post.]
 
 ```{bash, eval=FALSE}
 wget http://download.geofabrik.de/europe/italy-latest.osm.pbf
@@ -539,7 +540,7 @@ grid_combo_it_longlat_travel <- grid_combo_it_longlat %>% bind_cols(grid_distanc
 # median(rep(grid_combo_it_longlat_travel$min_time, times=grid_combo_it_longlat_travel$TOT_P)) %>%  units::set_units(value = "min")
 ```
 
-Since now I had a routing engine on my laptop, and I could torture it as much as I liked, I did not even limit the number of polling stations to check, and had it calculate the distance between each grid cell and each polling station. Yes, that's more than twenty million queries (distance and time are two separate queries)... just because I can, and because I don't have to hand over to Google `r scales::number(nrow(grid_distance_travel)/1000*5)` dollars for the pleasure.
+Since at this stage I had a routing engine on my laptop, and I could torture it as much as I liked, I did not even limit the number of polling stations to check, and had it calculate the distance between each grid cell and each polling station. Yes, that's more than twenty million queries (distance and time are two separate queries)... just because I can, and because I don't have to hand over to Google `r scales::number(nrow(grid_distance_travel)/1000*5)` dollars for the pleasure.
 
 OSRM is really fast, and on my cheap laptop it crunched all of the above in about 15 hours. 
 

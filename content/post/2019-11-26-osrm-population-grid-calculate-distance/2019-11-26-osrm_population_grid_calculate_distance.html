@@ -19,8 +19,8 @@ tags:
 <p><img src="/post/2019-11-26-osrm-population-grid-calculate-distance/2019-11-26-osrm_population_grid_calculate_distance_files/figure-html/europe_map-1.png" width="576" /></p>
 <p>Indeed, it took me about 25 minutes on a rainy Sunday to drive my wife to a polling station from the small village in the Italian Alps where I live.</p>
 <div class="figure">
-<img src="sectia.jpg" alt="Sectia de vot" />
-<p class="caption">Sectia de vot</p>
+<img src="/img/sectia.jpg" alt="A polling station in Trentino" />
+<p class="caption">A polling station in Trentino</p>
 </div>
 <p>Looking at the density of polling stations in Italy on a map, I had the feeling that I was not exceptionally lucky, and that indeed many Romanian voters in Italy had a polling station within relatively easy reach. Or… was I? How far was the average Italian resident from a Romanian polling station on 24 November 2019? I decided to find out.</p>
 <div id="finding-the-distance-between-residents-and-polling-stations" class="section level2">
@@ -51,10 +51,10 @@ tags:
 <p>And they are right:</p>
 <p><img src="/post/2019-11-26-osrm-population-grid-calculate-distance/2019-11-26-osrm_population_grid_calculate_distance_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 <p>Indeed, it takes about 10 minutes less to reach the polling station North of Trento than the one in Rovereto; by road, it’s also about 7 km closer.</p>
-<p>Now, if we had to answer this question only for the good folks of Vigo Cavine, then we could just use Google Maps, or ask around, for that matter. The problem is that we want to find this figure for all 172 216 one-km cells of the Italian population grid. Since we cannot take for granted that “the closest” is also “the easiest to reach”, it means that we should make more than query for each grid cell. Even if we check, say, for the 5 closest polling stations, that makes 861 080 queries. The lovely folks at Google charge <a href="https://cloud.google.com/maps-platform/pricing/">5 US dollars for each 1000 requests</a>, which means… let me add up the numbers… 4 305 USD.</p>
+<p>Now, if we had to answer this question only for the good folks of Vigo Cavine, then we could just use Google Maps, or ask around, for that matter. The problem is that we want to find this figure for all 172 216 one-km cells of the Italian population grid. Since we cannot take for granted that “the closest” is also “the easiest to reach”, it means that we should make more than one query for each grid cell. Even if we check, say, for the 5 closest polling stations, that makes 861 080 queries. The lovely folks at Google charge <a href="https://cloud.google.com/maps-platform/pricing/">5 US dollars for each 1000 requests</a>, which means… let me add up the numbers… 4 305 USD.</p>
 <p>Not bad. But perhaps a bit on the expensive side of things for a rainy Sunday afternoon curiosity?</p>
-<p>OpenStreetMaps, which is reasonably complete in terms of road connections in Italy, comes to the rescue. Unfortunately, there’s no OpenStreetMaps service that will let me make hundreds of thousands of queries for free, but hey, it’s open. I installed on my own laptop <a href="http://project-osrm.org/">OSRM, the OpenStreetMap routing machine</a>, downloaded the data for Italy, prepared them for routing, and… off we go.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></p>
-<p>Since now I had a routing engine on my laptop, and I could torture it as much as I liked, I did not even limit the number of polling stations to check, and had it calculate the distance between each grid cell and each polling station. Yes, that’s more than twenty million queries (distance and time are two separate queries)… just because I can, and because I don’t have to hand over to Google 116 246 dollars for the pleasure.</p>
+<p>OpenStreetMap, which is reasonably complete in terms of road connections in Italy, comes to the rescue. Unfortunately, there’s no OpenStreetMap service that will let me make hundreds of thousands of queries for free, but hey, it’s open. I installed on my own laptop <a href="http://project-osrm.org/">OSRM, the OpenStreetMap routing machine</a>, downloaded the data for Italy (thanks OpenStreetMap contributors!), prepared them for routing, and… off we go.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></p>
+<p>Since at this stage I had a routing engine on my laptop, and I could torture it as much as I liked, I did not even limit the number of polling stations to check, and had it calculate the distance between each grid cell and each polling station. Yes, that’s more than twenty million queries (distance and time are two separate queries)… just because I can, and because I don’t have to hand over to Google 116 246 dollars for the pleasure.</p>
 <p>OSRM is really fast, and on my cheap laptop it crunched all of the above in about 15 hours.</p>
 </div>
 <div id="on-a-glorious-monday-morning" class="section level2">

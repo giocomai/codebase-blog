@@ -1,5 +1,5 @@
 ---
-title: 'How to feel lucky on a glorious Monday morning: calculating the travel distance between places and each point of the European population grid'
+title: 'How to feel lucky on a Monday morning: calculating the travel distance between places and each point of the European population grid'
 author: Giorgio Comai
 date: '2019-11-26'
 slug: osrm-population-grid-calculate-distance
@@ -25,13 +25,6 @@ tags:
 <p>Looking at the density of polling stations in Italy on a map, I had the feeling that I was not exceptionally lucky, and that indeed many Romanian voters in Italy had a polling station within relatively easy reach. Or… was I? How far was the average Italian resident from a Romanian polling station on 24 November 2019? I decided to find out.</p>
 <div id="finding-the-distance-between-residents-and-polling-stations" class="section level2">
 <h2>Finding the distance between residents and polling stations</h2>
-<pre><code>## Reading layer `Reg01012019_g_WGS84&#39; from data source `/home/g/Nextcloud/R_nc/codebase-blog/content/post/2019-11-26-osrm-population-grid-calculate-distance/data/Limiti01012019_g/Reg01012019_g&#39; using driver `ESRI Shapefile&#39;
-## Simple feature collection with 20 features and 5 fields
-## geometry type:  MULTIPOLYGON
-## dimension:      XY
-## bbox:           xmin: 313279.3 ymin: 3933846 xmax: 1312016 ymax: 5220292
-## epsg (SRID):    32632
-## proj4string:    +proj=utm +zone=32 +datum=WGS84 +units=m +no_defs</code></pre>
 <p>How far is the average Italian resident from a polling station for Romania’s presidential elections? To answer this question, first we need to know where polling stations are located, second we need to know where Italian residents actually live, and then, well, calculate the distance.</p>
 <ol style="list-style-type: decimal">
 <li>the Romanian Ministry of Foreign Affairs has published a map with all polling stations for the latest elections <a href="http://www.mae.ro/maps/4083">on its own website</a>. I am not sure they published the coordinates of each location as open data, but, consciously or not, they let all addresses and coordinates in a nicely formatted json if you just look at the source code of that page (e.g. by doing ctrl+U with Firefox).</li>

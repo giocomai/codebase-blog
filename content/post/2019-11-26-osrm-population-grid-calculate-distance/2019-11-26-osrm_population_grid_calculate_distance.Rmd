@@ -1,5 +1,5 @@
 ---
-title: 'How to feel lucky on a glorious Monday morning: calculating the travel distance between places and each point of the European population grid'
+title: 'How to feel lucky on a Monday morning: calculating the travel distance between places and each point of the European population grid'
 author: Giorgio Comai
 date: '2019-11-26'
 slug: osrm-population-grid-calculate-distance
@@ -85,11 +85,13 @@ Looking at the density of polling stations in Italy on a map, I had the feeling 
 
 ## Finding the distance between residents and polling stations
 
-```{r results=hide}
+```{r}
 
 # istat: https://www.istat.it/it/archivio/222527
 
-regioni_ita_proj <- st_read(dsn = "data/Limiti01012019_g/Reg01012019_g")
+#regioni_ita_proj <- st_read(dsn = "data/Limiti01012019_g/Reg01012019_g")
+#saveRDS(regioni_ita_proj, "regioni_ita_proj.rds")
+regioni_ita_proj <- readRDS("regioni_ita_proj.rds")
 regioni_ita_longlat <- regioni_ita_proj %>%
   st_transform(crs = 4258)
 

@@ -1,0 +1,13 @@
+base_tn_aa.rds
+base_tn_sw.rds
+closest_route.rds
+crs_route.rds
+current_osrm_distance_rovereto.rds
+current_osrm_distance_trento.rds
+current_osrm_duration_rovereto.rds
+current_osrm_duration_trento.rds
+easiest_route.rds
+grid_combo_it_longlat.rds
+grid_distance_bee.rds
+grid_distance_travel.rds
+data

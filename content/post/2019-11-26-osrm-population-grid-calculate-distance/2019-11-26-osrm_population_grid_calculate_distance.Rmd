@@ -1,0 +1,567 @@
+---
+title: 'How to feel lucky on a glorious Monday morning: calculating the travel distance between places and each point of the European population grid'
+author: Giorgio Comai
+date: '2019-11-26'
+slug: osrm-population-grid-calculate-distance
+categories:
+  - rstats
+tags:
+  - dataviz
+  - maps
+  - italy
+  - openstreetmap
+  - elections
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library("tidyverse")
+library("jsonlite")
+library("sf")
+library("rnaturalearth")
+```
+
+
+Almost one million Romanian citizens cast their ballot for the second turn of the Romanian presidential elections in November 2019 from abroad, largely thanks to the fact that more than 800 polling stations around the world remained opened from Friday through Sunday over the election week-end. In some parts of Europe, polling stations were available not only in capital cities or major urban centers, but also in relatively remote locations. 
+
+```{r}
+locations <- read_json(path = "all_sections.json", simplifyVector = TRUE)
+
+ps_longlat <- st_as_sf(
+  x = locations %>%
+    mutate(la = as.numeric(la), lo = as.numeric(lo)),
+  coords = c("lo", "la"), crs = 4258
+)
+
+ps_italy_coord <- locations %>%
+  dplyr::filter(co == "Italia") %>% 
+  dplyr::filter(n != 50230) %>% 
+  select(id = n, lon = lo, lat = la)
+  
+ps_italy_longlat <- ps_longlat %>%
+  dplyr::filter(co == "Italia") %>% 
+  dplyr::filter(n != 50230)  #mis-categorised 
+
+ps_italy_proj <- ps_italy_longlat %>%
+  st_transform(crs = 32632)
+
+world <- ne_countries(
+  scale = "medium",
+  returnclass = "sf"
+)
+
+# ggplot(world) +
+#   geom_sf(fill= "gray95") +
+#   geom_sf(data = ps,
+#         #  mapping = aes(colour = Voters),
+#           alpha = 0.8, size = 0.6, colour = "darkred") +
+#  # coord_sf(xlim = c(-11, 52), ylim = c(31, 72), expand = FALSE) +
+#   theme_void(base_family = "Roboto") +
+#   labs(title = "Polling stations for Romania's 2019 presidential elections around the world")
+```
+
+
+
+```{r europe_map, fig.width=6, fig.height=6}
+ggplot(sf::st_transform(x = world, crs = 4326)) +
+  geom_sf(fill = "gray95") +
+  geom_sf(
+    data = ps_longlat,
+    #  mapping = aes(colour = Voters),
+    alpha = 0.8, colour = "darkred", size = 0.5
+  ) +
+  coord_sf(xlim = c(-25, 53), ylim = c(31, 72), expand = FALSE) +
+  theme_void(base_family = "Roboto") +
+  labs(title = "Polling stations for Romania's 2019 presidential elections in Europe",
+       caption = "* Source: Romanian Ministry of Foreign Affairs;\nData processing: Giorgio Comai/OBCT/EDJNet") +
+  theme(plot.title = element_text(face="bold"))
+```
+
+Indeed, it took me about 25 minutes on a rainy Sunday to drive my wife to a polling station from the small village in the Italian Alps where I live.
+
+![Sectia de vot](sectia.jpg)
+
+Looking at the density of polling stations in Italy on a map, I had the feeling that I was not exceptionally lucky, and that indeed many Romanian voters in Italy had a polling station within relatively easy reach. Or... was I? How far was the average Italian resident from a Romanian polling station on 24 November 2019? I decided to find out.  
+
+## Finding the distance between residents and polling stations
+
+```{r results=hide}
+
+# istat: https://www.istat.it/it/archivio/222527
+
+regioni_ita_proj <- st_read(dsn = "data/Limiti01012019_g/Reg01012019_g")
+regioni_ita_longlat <- regioni_ita_proj %>%
+  st_transform(crs = 4258)
+
+
+
+if (fs::file_exists(path = "grid_combo_it_longlat.rds")==FALSE) {
+  grid_combo_it_longlat <- st_read(dsn = "data/Version 2_0_1/GEOSTATReferenceGrid") %>%
+  right_join(read_csv("data/Version 2_0_1/GEOSTAT_grid_POP_1K_2011_V2_0_1.csv") %>% filter(CNTR_CODE == "IT"), by = "GRD_ID") %>%
+  st_transform(crs = 4258)
+  saveRDS(object = grid_combo_it_longlat, file = "grid_combo_it_longlat.rds")
+} else {
+  grid_combo_it_longlat <- readRDS(file = "grid_combo_it_longlat.rds")
+}
+
+
+grid_combo_it_proj <- grid_combo_it_longlat %>%
+  st_transform(crs = 32632)
+```
+
+
+How far is the average Italian resident from a polling station for Romania's presidential elections? To answer this question, first we need to know where polling stations are located, second we need to know where Italian residents actually live, and then, well, calculate the distance.
+
+1. the Romanian Ministry of Foreign Affairs has published a map with all polling stations for the latest elections [on its own website](http://www.mae.ro/maps/4083). I am not sure they published the coordinates of each location as open data, but, consciously or not, they let all addresses and coordinates in a nicely formatted json if you just look at the source code of that page (e.g. by doing ctrl+U with Firefox). 
+1. Eurostat published back in 2011 a [population grid](https://ec.europa.eu/eurostat/statistics-explained/index.php/Population_grids) of all of the EU. What is the population grid? Basically, it divides the surface of a country in squares of the size of 1km, and tells how many people live in each of these squares. Why do we need the population grid? Because we need to know that there are more residents in a urban center than on top of a mountain if we want to calculate meaningfully how long it would take for the average Italian to drive to a Romanian polling station. 
+
+Here is our data on a map, Romanian polling stations on top of Italy's population grid:
+
+
+```{r message=FALSE}
+
+
+map_it_gg <- ggplot() +
+  geom_sf(data = regioni_ita_longlat, fill = "gray95") +
+  geom_sf(data = grid_combo_it_longlat, mapping = aes(colour = TOT_P), show.legend = FALSE, lwd = 0.2) +
+  scale_color_viridis_c(option = "cividis", values = scales::rescale(c(1, 2, 5, 10, 20, 30, 40, 50, 100, 500, 1000, 5000, 10000))) +
+  geom_sf(
+    data = ps_italy_longlat,
+    alpha = 0.8,
+    colour = "black",
+    fill = "darkred", pch = 21, size = 2
+  ) +
+  theme_void(base_family = "Roboto") +
+  labs(
+    title = "Romania's polling stations in Italy and population density",
+    subtitle = "Romania's 2019 presidential elections",
+    caption = "Source: Romania's MFA; Eurostat population grid 2011; Istat;\nData processing: Giorgio Comai/OBCT/EDJNet"
+  ) +
+  theme(plot.title = element_text(face="bold"))
+
+map_it_gg
+```
+
+
+
+
+```{r}
+## projections 
+## st_transform(crs = 4258)
+##  st_transform(crs = 32632) for projected
+
+if (fs::file_exists(path = "grid_distance_bee.rds")==FALSE) {
+pb <- progress_estimated(length(grid_combo_it_proj[["GRD_ID"]]))
+
+grid_distance_bee <- purrr::map_dfr(.x = grid_combo_it_proj[["GRD_ID"]], 
+                                .f = function(x) {
+                                  pb$tick()$print()
+                                  current_cell <- grid_combo_it_proj %>%
+                                    filter(GRD_ID==x) %>%
+                                    st_geometry() %>% 
+                                    st_centroid()
+
+                                  tibble::tibble(distance = as.numeric(st_distance(x = current_cell,
+                                              ps_italy_proj[st_nearest_feature(x = current_cell,
+                                                                       y = ps_italy_proj),])))
+                                }, 
+                                .id = "GRD_ID_row_number")
+
+saveRDS(object = grid_distance_bee, file = "grid_distance_bee.rds")
+  
+} else {
+  grid_distance_bee <- readr::read_rds(path = "grid_distance_bee.rds")
+}
+
+
+# head(grid_distance_bee)
+#units::set_units(value = "km")
+
+grid_combo_it_longlat_dist <- grid_combo_it_longlat %>% bind_cols(grid_distance_bee) 
+```
+
+
+Now that we have the data, the answer to my question is "simple": let's measure the distance between each population grid cell and each polling station in Italy to find out which is the closest. Then it will be possible to calculate the mean (or median) distance, weighting for the number of residents living in each square kilometer that composes the grid. 
+
+There are `r scales::number(nrow(grid_combo_it_longlat))` one-km cells in the Italian population grid, and, making no other assumption, we'll check which is the closest polling station to each of them.
+
+This a computing-intensive process (it took approximately 6 hours on my laptop), but hey, this is what computer were made for. So a few hours later, here is our long-coveted answer: on average, an Italian resident lives less than 18 km from a Romanian polling station.^[You want the exact number emerging from the calculations? There you go: `r units::set_units(x = weighted.mean(grid_combo_it_longlat_dist$distance, grid_combo_it_longlat_dist$TOT_P), value = "m") %>% units::set_units(value = "km") %>% round(digits = 3)`. The reader should be mindful that - as these calculations are based on the central location of 1km cells, there are substantial approximations involved.] Fifty per cent of Italians live less than 13km from a Romanian polling station.^[Yes, lovely folks who are fond of stats, this is the median you were all asking for: exactly `r median(rep(grid_combo_it_longlat_dist$distance, times=grid_combo_it_longlat_dist$TOT_P)) %>%  units::set_units(value = "m") %>%  units::set_units(value = "km") %>% round(digits = 3)`. See previous footnote and keep in mind that we are not actually precise to the exact meter.]
+
+To summarise again how we reached this number: Eurostat publishes a population grid that tells how many people live in each square km of the continent. After having calculated the distance between the centre of each of these squares and the location of a polling station in Romania, we calculated a weighted mean value, "weighted" according to the number of people living in each square km, so that places with many residents in cities "weigh" more than places with few residents in the countryside. 
+
+## But... but... do you think people *fly* to polling stations?
+
+Yes, dear reader, you are right. I just calculated the distance "[as the crow flies](https://en.wikipedia.org/wiki/As_the_crow_flies)". Mind you, I believe this information is very telling and impressive, as residents of most countries would likely need to drive hundreds of kilometers to reach a polling station if they are abroad on election day. But as you will surely remember from the beginning of this story, this author lives in the Alps, where mountains can, and indeed do, stand in the way between an Italian resident and their preferred Romanian polling station. Even worse, the wise Alpine resident knows from experience that what looks closest on a map does not necessarily mean easiest to reach.
+
+Let's take it from the start looking at my native Trentino-Alto Adige/South Tyrol: population grid and Romanian polling stations.
+
+```{r message=FALSE}
+ggplot() +
+  geom_sf(data = regioni_ita_longlat %>%
+    filter(DEN_REG == "Trentino-Alto Adige")) +
+  geom_sf(data = grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG == "Trentino-Alto Adige"), ], mapping = aes(fill = TOT_P), show.legend = FALSE, lwd = 0.2) +
+  scale_fill_viridis_c(option = "cividis", values = scales::rescale(c(1, 2, 5, 10, 20, 30, 40, 50, 100, 500, 1000, 5000, 10000))) +
+  geom_sf(
+    data = ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+      filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)),
+    alpha = 0.8,
+    colour = "black",
+    fill = "darkred", pch = 21, size = 5
+  ) +
+  theme_void(base_family = "Roboto")
+```
+
+Even if the map does not show the mountains, it is easy to guess from the population grid that they are there. 
+
+
+```{r}
+library("ggmap")
+if(fs::file_exists(path = "base_tn_aa.rds")==FALSE) {
+ base_tn_aa <- ggmap::get_map(location = c(10.3546, 45.6505, 12.5, 47.156), zoom = 9, maptype = "terrain-background", source = "stamen")
+ saveRDS(object = base_tn_aa, file = "base_tn_aa.rds")
+} else {
+  base_tn_aa <- readRDS(file = "base_tn_aa.rds")
+}
+
+```
+
+```{r}
+
+ggmap(base_tn_aa) +
+  geom_sf(data = regioni_ita_longlat %>%
+    filter(DEN_REG == "Trentino-Alto Adige"), inherit.aes = FALSE, color = "black", fill = NA) +
+   geom_sf(data = grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG=="Trentino-Alto Adige"),], mapping = aes(fill = TOT_P), show.legend = FALSE, inherit.aes = FALSE, alpha = 0.8, lwd = 0.2) +
+  scale_fill_viridis_c(
+    option = "cividis",
+    values = scales::rescale(c(1, 2, 5, 10, 20, 30, 40, 50, 100, 500, 1000, 5000, 10000))
+  ) +
+  geom_sf(
+    data = ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+      filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)),
+    alpha = 0.8,
+    colour = "black",
+    fill = "darkred", pch = 21, size = 5, inherit.aes = FALSE
+  ) +
+  coord_sf(datum = NA) +
+  theme_void(base_family = "Roboto")
+```
+
+
+```{r}
+ggmap(base_tn_aa) +
+  geom_sf(data = regioni_ita_longlat %>%
+    filter(DEN_REG == "Trentino-Alto Adige"), inherit.aes = FALSE, color = "black", fill = NA) +
+   # geom_sf(data = grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG=="Trentino-Alto Adige"),], mapping = aes(fill = TOT_P), show.legend = FALSE, inherit.aes = FALSE, alpha = 0.8, lwd = 0.2) +
+  scale_fill_viridis_c(
+    option = "cividis",
+    values = scales::rescale(c(1, 2, 5, 10, 20, 30, 40, 50, 100, 500, 1000, 5000, 10000))
+  ) +
+  geom_sf(
+    data = ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+      filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)),
+    alpha = 0.8,
+    colour = "black",
+    fill = "darkred", pch = 21, size = 5, inherit.aes = FALSE
+  ) +
+  coord_sf(datum = NA) +
+  theme_void(base_family = "Roboto")
+```
+
+
+Let's move on to a specific example. Let's say that somebody in Vigo Cavedine, where part of my family hails from, wants to know how far they are from a Romanian polling station. They would soon find out that, as the crow flies, the closest polling station is in Rovereto, and is just 11 km from where they are. 
+
+
+```{r}
+library("ggmap")
+if(fs::file_exists(path = "base_tn_sw.rds")==FALSE) {
+  base_tn_sw <- ggmap::get_map(location = c(10.75, 45.8, 11.45, 46.15), zoom = 11, maptype = "terrain-background", source = "stamen")
+
+saveRDS(object = base_tn_sw, file = "base_tn_sw.rds")  
+} else {
+  base_tn_sw <- readRDS("base_tn_sw.rds")
+}
+
+current_location <- st_transform(st_as_sf(x = tibble(lat = 45.9788837, lon = 10.9810237), coords = c("lon", "lat"), crs = 4258), crs = st_crs(grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG == "Trentino-Alto Adige"), ]))
+
+current_cell <- grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG == "Trentino-Alto Adige"), ] %>%
+  slice(unlist(st_intersects(x = current_location, grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG == "Trentino-Alto Adige"), ]))) %>%
+  st_centroid()
+```
+
+```{r}
+trento_ps <- ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+                                           filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)) %>% slice(1)
+
+rovereto_ps <- ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+                                           filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)) %>% slice(2)
+
+
+vigo_tn_line <- st_cast(x = st_union(current_cell%>% select(geometry),
+                     trento_ps%>% select(geometry)),
+        to = "LINESTRING") %>% 
+   mutate(distance = st_distance(x = current_cell, trento_ps) %>% units::set_units(value = "km")) %>% 
+  mutate(distance = paste(round(distance), "km"))
+
+vigo_rovereto_line <- st_cast(x = st_union(current_cell%>% select(geometry),
+                     rovereto_ps%>% select(geometry)),
+        to = "LINESTRING") %>% 
+  mutate(distance = st_distance(x = current_cell, rovereto_ps) %>% units::set_units(value = "km")) %>% 
+  mutate(distance = paste(round(distance), "km"))
+
+
+
+```
+
+
+
+```{r}
+
+ggmap(base_tn_sw) +
+  geom_sf(data = regioni_ita_longlat %>%
+    filter(DEN_REG == "Trentino-Alto Adige"), inherit.aes = FALSE, color = "black", fill = NA) +
+  # geom_sf(data = grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG=="Trentino-Alto Adige"),], mapping = aes(fill = TOT_P), show.legend = FALSE, inherit.aes = FALSE, alpha = 0.4, lwd = 0) +
+  scale_fill_viridis_c(
+    option = "cividis",
+    values = scales::rescale(c(1, 2, 5, 10, 20, 30, 40, 50, 100, 500, 1000, 5000, 10000))
+  ) +
+  geom_sf(
+    data = ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+      filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)),
+    alpha = 0.8,
+    colour = "black",
+    fill = "#CE1126", pch = 21, size = 5, inherit.aes = FALSE
+  ) +
+  geom_sf(data = current_cell, color = "#002B7F", size = 5, alpha = 0.8, inherit.aes = FALSE) +
+   geom_sf(data = vigo_tn_line, inherit.aes = FALSE, colour = "#FCD116") +
+  geom_sf(data = vigo_rovereto_line, inherit.aes = FALSE, colour = "#FCD116") +
+  geom_sf_label(data = st_centroid(vigo_rovereto_line), mapping = aes(label = distance), inherit.aes = FALSE) +
+    geom_sf_label(data = st_centroid(vigo_rovereto_line), mapping = aes(label = distance), inherit.aes = FALSE, alpha = 0.9) +
+      geom_sf_label(data = st_centroid(vigo_tn_line), mapping = aes(label = distance), inherit.aes = FALSE, alpha = 0.9) +
+  
+  coord_sf(datum = NA) +
+  theme_void(base_family = "Roboto")
+
+
+```
+
+The good folks of Vigo Cavedine are however not so easily misled by all of these data. They know that Trento is actually easier to reach.^[By the way, did you see what I did there? Blue, yellow and red: it's the Romanian flag!] 
+
+And they are right:
+
+```{r}
+
+library("osrm")
+options(osrm.server = "http://0.0.0.0:5000/", osrm.profile = "driving")
+#options(osrm.server = "http://router.project-osrm.org/")
+
+if (fs::file_exists("crs_route.rds")==FALSE) {
+  route <- osrmRoute(src = ps_italy_longlat %>% slice(1), dst = ps_italy_longlat %>% slice(2), overview = "full", returnclass = "sf")
+
+  crs_route <- st_crs(route)
+  saveRDS(object = crs_route, file = "crs_route.rds")
+} else {
+  crs_route <- readr::read_rds(path = "crs_route.rds")
+}
+
+if (fs::file_exists("current_osrm_duration_trento.rds")==FALSE) {
+  
+current_osrm_duration_trento <- osrm::osrmTable(src = st_transform(current_cell,  crs = crs_route),
+                dst = st_transform(trento_ps, crs = crs_route), measure = "duration")
+
+saveRDS(object = current_osrm_duration_trento, file = "current_osrm_duration_trento.rds")
+
+current_osrm_duration_rovereto <- osrm::osrmTable(src = st_transform(current_cell,  crs = crs_route),
+                dst = st_transform(rovereto_ps, crs = crs_route), measure = "duration")
+
+saveRDS(object = current_osrm_duration_rovereto, file = "current_osrm_duration_rovereto.rds")
+
+
+current_osrm_distance_trento <- osrm::osrmTable(src = st_transform(current_cell,  crs = crs_route),
+                dst = st_transform(trento_ps, crs = crs_route), measure = "distance")
+
+saveRDS(object = current_osrm_distance_trento, file = "current_osrm_distance_trento.rds")
+
+
+current_osrm_distance_rovereto <- osrm::osrmTable(src = st_transform(current_cell,  crs = crs_route),
+                dst = st_transform(rovereto_ps, crs = crs_route), measure = "distance")
+
+
+
+saveRDS(object = current_osrm_distance_rovereto, file = "current_osrm_distance_rovereto.rds")
+
+
+
+closest_route <- osrmRoute(src = current_cell,
+                           dst = rovereto_ps, returnclass = "sf") %>% 
+  mutate(distance = paste0(round(current_osrm_distance_rovereto$distances/1000,digits = 1), " km\n", round(current_osrm_duration_rovereto$durations), " mins"))
+
+
+saveRDS(object = closest_route, file = "closest_route.rds")
+
+easiest_route <- osrmRoute(src = current_cell,
+                           dst = trento_ps, returnclass = "sf") %>% 
+  mutate(distance = paste0(round(current_osrm_distance_trento$distances/1000, digits = 1), " km\n", round(current_osrm_duration_trento$durations), " mins"))
+
+saveRDS(object = easiest_route, file = "easiest_route.rds")
+
+} else {
+  current_osrm_duration_trento <- readRDS("current_osrm_duration_trento.rds")
+  current_osrm_duration_rovereto <- readRDS("current_osrm_duration_rovereto.rds")
+  current_osrm_distance_trento <- readRDS("current_osrm_distance_trento.rds")
+  current_osrm_distance_rovereto <- readRDS("current_osrm_distance_rovereto.rds")
+  closest_route <- readRDS("closest_route.rds")
+  easiest_route <- readRDS("easiest_route.rds")
+}
+
+
+
+```
+
+```{r}
+
+ggmap(base_tn_sw) +
+  geom_sf(data = regioni_ita_longlat %>%
+    filter(DEN_REG == "Trentino-Alto Adige"), inherit.aes = FALSE, color = "black", fill = NA) +
+  # geom_sf(data = grid_combo_it_longlat[regioni_ita_longlat %>% filter(DEN_REG=="Trentino-Alto Adige"),], mapping = aes(fill = TOT_P), show.legend = FALSE, inherit.aes = FALSE, alpha = 0.4, lwd = 0) +
+  scale_fill_viridis_c(
+    option = "cividis",
+    values = scales::rescale(c(1, 2, 5, 10, 20, 30, 40, 50, 100, 500, 1000, 5000, 10000))
+  ) +
+  geom_sf(
+    data = ps_longlat %>% dplyr::filter(st_within(x = ps_longlat, y = regioni_ita_longlat %>%
+      filter(DEN_REG == "Trentino-Alto Adige"), sparse = FALSE)),
+    alpha = 0.8,
+    colour = "black",
+    fill = "#CE1126", pch = 21, size = 5, inherit.aes = FALSE
+  ) +
+  geom_sf(data = current_cell, color = "#002B7F", size = 5, alpha = 0.8, inherit.aes = FALSE) +
+   geom_sf(data = easiest_route, inherit.aes = FALSE, colour = "#FCD116") +
+  geom_sf(data = closest_route, inherit.aes = FALSE, colour = "#FCD116") +
+    geom_sf_label(data = st_centroid(easiest_route), mapping = aes(label = distance), inherit.aes = FALSE, alpha = 0.9) +
+      geom_sf_label(data = st_centroid(closest_route), mapping = aes(label = distance), inherit.aes = FALSE, alpha = 0.9) +
+  
+  coord_sf(datum = NA) +
+  theme_void(base_family = "Roboto")
+
+
+```
+
+Indeed, it takes about 10 minutes less to reach the polling station North of Trento than the one in Rovereto; by road, it's also about 7 km closer.
+
+Now, if we had to answer this question only for the good folks of Vigo Cavine, then we could just use Google Maps, or ask around, for that matter. The problem is that we want to find this figure for all `r scales::number(nrow(grid_combo_it_longlat))` one-km cells of the Italian population grid. Since we cannot take for granted that "the closest" is also "the easiest to reach", it means that we should make more than query for each grid cell. Even if we check, say, for the 5 closest polling stations, that makes `r scales::number(nrow(grid_combo_it_longlat)*5)` queries. The lovely folks at Google charge [5 US dollars for each 1000 requests](https://cloud.google.com/maps-platform/pricing/), which means... let me add up the numbers... `r scales::number(nrow(grid_combo_it_longlat)*5/1000*5)` USD.
+
+Not bad. But perhaps a bit on the expensive side of things for a rainy Sunday afternoon curiosity?
+
+OpenStreetMaps, which is reasonably complete in terms of road connections in Italy, comes to the rescue. Unfortunately, there's no OpenStreetMaps service that will let me make hundreds of thousands of queries for free, but hey, it's open. I installed on my own laptop [OSRM, the OpenStreetMap routing machine](http://project-osrm.org/), downloaded the data for Italy, prepared them for routing, and... off we go.^[OSRM documentation is not too bad and it's easy to install in a just a few command lines... they suggest to run OSRM in Docker, but I found it easier to deal with RAM issues just running it from the host. Preparing country-level data for routing may well take an hour or more, and you need to have about 10GB of RAM for a country the size of Italy (doing this with a Europe-wide map may not be a viable option on most consumer hardware). Downloading and extracting the data is just four lines of code, you find them in the full code version of this post.]
+
+```{bash, eval=FALSE}
+wget http://download.geofabrik.de/europe/italy-latest.osm.pbf
+
+osrm-extract -p /opt/car.lua italy-latest.osm.pbf
+
+#following line may not be necessary
+#osrm-extract -p /usr/local/share/osrm/profiles/car.lua italy-latest.osm.pbf
+osrm-contract italy-latest.osrm
+osrm-routed italy-latest.osrm
+```
+
+
+```{r}
+
+
+ps_italy_longlat_route <- st_transform(x = ps_italy_longlat, crs = crs_route)
+grid_combo_it_longlat_route <- st_transform(x = grid_combo_it_longlat, crs = crs_route)
+
+
+if (fs::file_exists(path = "grid_distance_travel.rds")==FALSE) {
+  pb <- progress_estimated(length(grid_combo_it_proj[["GRD_ID"]]))
+  
+  grid_distance_travel <-
+    purrr::map_dfr(.x = grid_combo_it_proj[["GRD_ID"]], 
+                   .f = function(x) {
+                     pb$tick()$print()
+                     current_cell <- grid_combo_it_proj %>%
+                       filter(GRD_ID==x) %>%
+                       st_geometry() %>% 
+                       st_centroid() %>% 
+                       st_transform(crs = crs_route) %>% 
+                       st_coordinates() %>% 
+                       as_tibble() %>% 
+                       transmute(id = x, lon = X, lat = Y)
+                       
+                     
+                     
+current_osrm_duration <- osrm::osrmTable(src = current_cell,
+                dst = ps_italy_coord, measure = "duration")
+
+current_osrm_distance <-  osrm::osrmTable(src = current_cell,
+                dst = ps_italy_coord, measure = "distance")
+
+
+current_osrm_df <- tibble(ps_id = ps_italy_coord$id,
+                          Travel_minutes = as.numeric(current_osrm_duration$durations),
+                          Travel_km = as.numeric(current_osrm_distance$distances)/1000) 
+current_osrm_df
+                   }, 
+                   .id = "GRD_ID_row_number")
+  
+  saveRDS(object = grid_distance_travel, file = "grid_distance_travel.rds")
+  
+} else {
+  grid_distance_travel <- readr::read_rds(path = "grid_distance_travel.rds")
+}
+
+grid_distance_travel_min <- 
+grid_distance_travel %>% 
+  group_by(GRD_ID_row_number) %>% 
+  summarise(min_time=min(Travel_minutes), min_distance=min(Travel_km))
+
+# sum(is.na(grid_distance_travel_min$min_time))
+
+grid_combo_it_longlat_travel <- grid_combo_it_longlat %>% bind_cols(grid_distance_travel_min) %>% 
+  dplyr::filter(is.na(min_time)==FALSE)
+
+#grid_combo_it_longlat_travel
+
+#check: units::valid_udunits() %>% View()
+
+# #average
+# units::set_units(x = weighted.mean(grid_combo_it_longlat_travel$min_distance, grid_combo_it_longlat_travel$TOT_P), value = "km")
+# 
+# units::set_units(x = weighted.mean(grid_combo_it_longlat_travel$min_time, grid_combo_it_longlat_travel$TOT_P), value = "min")
+# 
+# 
+# #median
+# median(rep(grid_combo_it_longlat_travel$min_distance, times=grid_combo_it_longlat_travel$TOT_P)) %>%  units::set_units(value = "km")
+# 
+# median(rep(grid_combo_it_longlat_travel$min_time, times=grid_combo_it_longlat_travel$TOT_P)) %>%  units::set_units(value = "min")
+```
+
+Since now I had a routing engine on my laptop, and I could torture it as much as I liked, I did not even limit the number of polling stations to check, and had it calculate the distance between each grid cell and each polling station. Yes, that's more than twenty million queries (distance and time are two separate queries)... just because I can, and because I don't have to hand over to Google `r scales::number(nrow(grid_distance_travel)/1000*5)` dollars for the pleasure.
+
+OSRM is really fast, and on my cheap laptop it crunched all of the above in about 15 hours. 
+
+
+
+## On a glorious Monday morning...
+
+...I could wake up and feel that I was lucky. Even, better, I *knew* I was lucky. 
+
+On average, Italians would need to drive about 40 minutes to reach a Romanian polling station. Half of Italians could reach one in less than 35 minutes. But it took me only 25: I am officially lucky. 
+
+
+```{r}
+distribution_voters_gg <- ggplot(data = tibble::tibble(mins = rep(grid_combo_it_longlat_travel$min_distance, times=grid_combo_it_longlat_travel$TOT_P))) +
+  geom_density(mapping = aes(mins)) +
+  labs(title = "How long does it take for Italian residents to reach a Romanian polling station?", 
+       caption = "Source: Romania's MFA for locations of polling stations;\nTravel time calculated via OpenStreetMap and OSRM;\nData processing: Giorgio Comai/OBCT/EDJNet") +
+  scale_x_continuous(name = "Minutes", breaks = scales::pretty_breaks(n = 20)) +
+  scale_y_continuous(name = "", breaks = NULL) +
+  theme_minimal(base_family = "Roboto") +
+  theme(plot.title = element_text(face="bold"))
+
+distribution_voters_gg
+  
+```
+
+

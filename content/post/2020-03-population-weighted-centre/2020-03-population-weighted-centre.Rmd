@@ -208,7 +208,7 @@ More recently, my colleague [Ornaldo Gjergij](https://twitter.com/ornaldo_) need
 
 In principle, this looks like a reasonably straightforward problem. [Eurostat conveniently distributes geographic data](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/lau) on all local administrative units in Europe. The easy solution is to let software calculate the centroid for each of them, and  *presto*, mission accomplished.
 
-This would be alright if all municipalities were roundly shaped. Unfortunately, this is rarely the case. Even towns which are as satisfingly regularly-shaped as possible, often have irregular administrative boundaries. Palmanova, in Italy, has an unmistakable centre, but the administrative boundaries of its municipality are not as regularly shaped: the centroid of those boundaries  clearly does not correspond to the town centre.
+This would be alright if all municipalities were roundly shaped. Unfortunately, this is rarely the case. Even towns which are as satisfyingly regularly-shaped as possible, often have irregular administrative boundaries. Palmanova, in Italy, has an unmistakable centre, but the administrative boundaries of its municipality are not as regularly shaped: the centroid of those boundaries  clearly does not correspond to the town centre.
 
 
 ```{r}
@@ -218,7 +218,7 @@ custom_ll_map_centroid("Palmanova", nudge_x = 150, nudge_y = 600)
 
 In many cases, the difference is hardly noticeable especially if the zoom on the map is not too close. However, there is a full range of more complicated and not so uncommon cases.
 
-In the European context, things get more complicated and problematic in particular with island arcipelagos (obviously), sparsely populated areas, and mountain regions where large uninhabited areas are by necessity attributed to a given muncipality: the inhabited centre of the municipality is often at the margins of the administrative boundaries. 
+In the European context, things get more complicated and problematic in particular with island archipelagos (obviously), sparsely populated areas, and mountain regions where large uninhabited areas are by necessity attributed to a given municipality: the inhabited centre of the municipality is often at the margins of the administrative boundaries. 
 
 In the case of Pinzolo, for example, in Italian Alps, the centre of the municipality is at the utmost South of its administrative boundaries.
 
@@ -232,7 +232,7 @@ Besides, it is not uncommon for mountain municipalities to have non-contiguous t
 custom_ll_map_centroid("Tre Ville", nudge_y = 3000, )
 ```
 
-In the case of island arcipelagos, this approach would likely just pick a spot in the middle of the sea. This is not an issue only of tiny villages, but also for regional centres, such as Aosta, in Italy's North-West.
+In the case of island archipelagos, this approach would likely just pick a spot in the middle of the sea. This is not an issue only of tiny villages, but also for regional centres, such as Aosta, in Italy's North-West.
 
 
 ```{r}
@@ -246,7 +246,7 @@ In the case outlined by Andrea Borruso in [the post linked above](https://medium
 
 In the case of my colleague Ornaldo, defining where a given town actually is has an impact on the data themselves. You can find more details about his work at this link, but here is his problem in brief. One of the datasets distributed by [Copernicus](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-uerra-europe-single-levels) provides detailed data on temperature for the whole period 1961-2018, with data available for a grid covering all of Europe with a precision of 5.5 km. These data are continuous and know no borders, but change of temperature differs considerably even in contiguous grid cells, in particular in mountain or seaside areas: readers familiar with the geography of Italy, for example, will surely understand that a large number of municipalities falls into one of these two categories.
 
-In order to make these data available to the wider public, Ornaldo created an interactive interface enabling readers to find data about their own town (currently available for Italy [link], forthcoming for the resto of Europe). Here is the problem: when talking about the temperature of Aosta, people will have in mind the city of Aosta. For example, when they look at the weather forecast, they see the expected temperature of downtown Aosta, not the one on the neighbouring mountaintop, which would be very different and not really helpful in understanding if you need a coat or not to go out. As a consequence, when reporting temperature change of Aosta, if we want to be fair to the reader, we should give the temperature change in the city of Aosta, not on some mountain in its proximity. This is true also for small municipalities in the mountains, especially if we publish these data with a local audience in mind.
+In order to make these data available to the wider public, Ornaldo created an interactive interface enabling readers to find data about their own town (currently available for Italy [link], forthcoming for the rest of Europe). Here is the problem: when talking about the temperature of Aosta, people will have in mind the city of Aosta. For example, when they look at the weather forecast, they see the expected temperature of downtown Aosta, not the one on the neighbouring mountaintop, which would be very different and not really helpful in understanding if they need a coat or not to go out. As a consequence, when reporting temperature change of Aosta, if we want to be fair to the reader, we should give the temperature change in the city of Aosta, not on some mountain in its proximity. This is true also for small municipalities in the mountains, especially if we publish these data with a local audience in mind.
 
 Ultimately, this is relevant also for national audiences, considering that such mountain locations are often outliers and as such are more likely to make headlines: to the extent that it is possible, such headline should make sense, and not simply record whatever municipality happens to have more mountain pastures and peaks within its administrative boundaries. 
 
@@ -358,28 +358,28 @@ if (fs::file_exists("all_pop_centres_df.rds")==FALSE) {
 
 # Is this it?
 
-This solution is not going to work in *all* cases. Including in the calculation grid cells that are not completely inside the administraive boundaries of a given municipality is necessary (some municipalities are very small, and as appears from the example above some have most of its residents at the margins), but may also lead to include in the calculation residents from neighbouring areas.
+This solution is not going to work in *all* cases. Including in the calculation grid cells that are not completely inside the administrative boundaries of a given municipality is necessary (some municipalities are very small, and as appears from the example above some have most of its residents at the margins), but may also lead to include in the calculation residents from neighbouring areas.
 
-Again, in [his post Andrea Borruso mentions](https://medium.com/tantotanto/cerco-un-centro-di-gravit%C3%A0-permanente-per-rappresentare-il-pendolarismo-tra-i-comuni-italiani-20198e33e493) a number of alternative approaches. Looking for the town centres as defined in OpenStreetMap may actually give better results in most cases. But the approach outlined in this post is more flexible, and could be used to find the centre of other territorial units, such as electoral precints or census areas.
+Again, in [his post Andrea Borruso mentions](https://medium.com/tantotanto/cerco-un-centro-di-gravit%C3%A0-permanente-per-rappresentare-il-pendolarismo-tra-i-comuni-italiani-20198e33e493) a number of alternative approaches. Looking for the town centres as defined in OpenStreetMap may actually give better results in most cases. But the approach outlined in this post is more flexible, and could be used to find the centre of other territorial units, such as electoral precincts or census areas.
 
 
 This approach could be further improved by having more detailed data. And as it turns out, they exist. Facebook (yes, Facebook) distributes with a permissive Creative Commons license high resolution population maps: "these high-resolution maps estimate the number of people living within 30-meter grid tiles in nearly every country around the world." The [full methodology is detailed on their website](https://dataforgood.fb.com/docs/methodology-high-resolution-population-density-maps-demographic-estimates/), but in brief, they take available data and adjust them using satellite imagery and machine learning. As of this writing, these population grids have last been updated in March 2020, with most recent data referring to 2019. [They can be downloaded freely](https://data.humdata.org/organization/facebook), yet they seem to be little used, with their own download stats recording only a few dozen hits per month for most country-level data.
 
 Using such granular data, do we get more accurate centres?  
 
-Apparently, not always: in the case of Pinzolo, Facebook's machine learning based on satellite imagery seemingly mistaked facilities for ski-goers with residential housing, moving the population-weighted centre furhter away from the actual village. 
+Apparently, not always: in the case of Pinzolo, Facebook's machine learning based on satellite imagery seemingly mistaked facilities for ski-goers with residential housing, moving the population-weighted centre further away from the actual village. 
 
 ```{r}
 custom_ll_map_pop_centre_hr(name = "Pinzolo", power = 2)
 ```
 
-Furhter increasing the disbalance in favour of highly populated areas, by raising the residents of each cell by the power of 5, reduces the impact of such (probably uncommon) distorsions in the data.
+Further increasing the disbalance in favour of highly populated areas, by raising the residents of each cell by the power of 5, reduces the impact of such (probably uncommon) distortions in the data.
 
 ```{r}
 custom_ll_map_pop_centre_hr(name = "Pinzolo", power = 5)
 ```
 
-But perhaps most importantly, re-calculating the population-weighted centre with these parameteres and increased detail, here is what I get:
+But perhaps most importantly, re-calculating the population-weighted centre with these parameters and increased detail, here is what I get:
 
 ```{r}
 custom_ll_map_pop_centre_hr(name = "Palmanova", power = 5, nudge_y = 800)

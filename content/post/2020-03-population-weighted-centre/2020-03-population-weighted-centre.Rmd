@@ -317,7 +317,9 @@ if (fs::file_exists("pop_grid_countries.rds")) {
 }
 
 
-lau_eu_with_grid <- lau_eu %>% dplyr::filter(is.element(CNTR_CODE, pop_grid_countries))
+lau_eu_with_grid <- lau_eu %>% dplyr::filter(is.element(CNTR_CODE, pop_grid_countries)) 
+
+
 
 pb <- dplyr::progress_estimated(n = nrow(lau_eu_with_grid))
 
@@ -330,6 +332,7 @@ if (fs::file_exists("all_pop_centres_df.rds")==FALSE) {
                 lau_grid_name_temp <- stringr::str_c(x, "_lau_eu_1m-st_intersects")
                 
                 sf_location <- ll_get_lau_eu(name = x,
+                                             lau_sf = lau_eu_with_grid,
                                              silent = TRUE)
                 
                 sf_location_grid <- ll_get_population_grid(match_sf = sf_location,
@@ -350,9 +353,6 @@ if (fs::file_exists("all_pop_centres_df.rds")==FALSE) {
   readr::write_csv(x = all_pop_centres_df, path = "all_pop_centres_df.csv")
 }
 
-
-
-#do.call(rbind, my_list)
 
 ```
 

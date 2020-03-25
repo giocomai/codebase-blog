@@ -1,0 +1,390 @@
+---
+title: 'How to find the population-weighted centre of local administrative units'
+author: Giorgio Comai
+date: '2020-03-25'
+slug: population-weighted-centre
+categories:
+  - rstats
+tags:
+  - dataviz
+  - maps
+  - italy
+
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+
+
+library("ggspatial")
+#remotes::install_github("yutannihilation/ggsflabel")
+library("ggsflabel")
+# rosm::osm.types() 
+
+library("tidyverse", quietly = TRUE)
+library("sf", quietly = TRUE)
+library("latlon2map")
+ll_set_folder(path = "~/R")
+# ll_get_nuts_it(name = name, level = "lau", resolution = "high")
+#name = "Palmanova"
+
+custom_ll_map_centroid <- function(name, nudge_y = 2000,  nudge_x = 500, zoomin = 0) {
+  sf_location <- ll_get_nuts_it(name = name, level = "lau", resolution = "high", silent = TRUE)
+  centroid <- sf::st_centroid(sf_location %>% sf::st_transform(crs = 3857)) %>% sf::st_transform(crs = 4326)
+  
+  bbox <- sf::st_bbox(sf_location)
+  desired_bbox <- ll_bbox(sf = sf_location, ratio = "16:9")
+  
+  ggplot() +
+  annotation_map_tile(type = "stamenbw", zoomin = zoomin, cachedir = fs::path(ll_set_folder(), "ll_data")) +
+    geom_sf(data = sf::st_as_sfc(desired_bbox), fill = NA, color = NA) +
+  geom_sf(data = sf_location,
+          colour = "darkred",
+          size = 2,
+          fill = NA,
+          alpha = 0.8) +
+  geom_sf(data = centroid,
+          colour = "darkred",
+          fill = "coral",
+          size = 5,
+          shape = 21,
+          alpha = 0.8) +
+  geom_sf_label_repel(data = centroid, mapping = aes(label  = "Not the town centre"), nudge_y = nudge_y, nudge_x = nudge_x, alpha = 0.8, seed = 1) +
+  labs(title = paste(sf_location$COMUNE), 
+       subtitle = "Administrative boundaries and centroid",
+       caption = "Source: Istat (CC-BY) for administrative boundaries
+       Map tiles by Stamen Design, under CC BY 3.0
+       Base map data by OpenStreetMap, under ODbL.")
+}
+
+custom_ll_map_pop_grid <- function(name, nudge_y = 2000, nudge_x = 500, hr = FALSE) {
+  sf_location <- ll_get_nuts_it(name = name, level = "lau", resolution = "high", silent = TRUE)
+  centroid <- sf::st_centroid(sf_location %>% sf::st_transform(crs = 3857)) %>% sf::st_transform(crs = 4326)
+  
+  bbox <- sf::st_bbox(sf_location)
+  desired_bbox <- ll_bbox(sf = sf_location, ratio = "16:9")
+  if (hr==TRUE) {
+    lau_grid_name_temp <- stringr::str_c(name, "_lau_hr-st_intersects")
+    
+    sf_location_grid <- ll_get_population_grid_hr(geo = "IT", 
+                                                  match_sf = sf_location,
+                                                  match_name = lau_grid_name_temp,
+                                                  join = sf::st_intersects,
+                                                  silent = TRUE)
+  } else {
+    lau_grid_name_temp <- stringr::str_c(name, "_lau_high-st_intersects")
+    
+    sf_location_grid <- ll_get_population_grid(match_sf = sf_location,
+                                               match_name = lau_grid_name_temp,
+                                               match_country = "IT",
+                                               join = sf::st_intersects,
+                                               silent = TRUE)
+  }
+  
+  if (hr==FALSE) {
+    sf_location_grid <- sf_location_grid %>% dplyr::rename(`Nr. of residents` = TOT_P)
+  } else {
+    sf_location_grid <- sf_location_grid %>% dplyr::rename(`Nr. of residents` = Population)
+  } 
+   gg <- ggplot() +
+    annotation_map_tile(type = "stamenbw", zoomin = 0, cachedir = fs::path(ll_set_folder(), "ll_data")) +
+    geom_sf(data = sf::st_as_sfc(desired_bbox), fill = NA, color = NA) +
+    geom_sf(data = sf_location_grid,
+            mapping = if (hr==TRUE) aes(colour = `Nr. of residents`) else aes(fill = `Nr. of residents`), alpha = 0.5) +
+    geom_sf(data = sf_location,
+            colour = "darkred",
+            size = 2,
+            fill = NA,
+            alpha = 0.8) +
+      geom_sf(data = centroid,
+          colour = "darkred",
+          fill = "coral",
+          size = 5,
+          shape = 21,
+          alpha = 0.8) +
+    geom_sf_label_repel(data = centroid, mapping = aes(label  = "Centroid"), nudge_y = nudge_y, nudge_x = nudge_x, alpha = 0.8, seed = 1) +
+      labs(title = paste(sf_location$COMUNE), 
+       subtitle = "Administrative boundaries, population grid, and centroid",
+       caption = "Source: Istat (CC-BY) for administrative boundaries
+       Data source population grid information: Eurostat, EFGS
+       Map tiles by Stamen Design, under CC BY 3.0
+       Base map data by OpenStreetMap, under ODbL.")
+  
+  if (hr==TRUE) {
+    gg + scale_color_viridis_c() 
+  } else {
+    gg + scale_fill_viridis_c()
+  } 
+}
+
+custom_ll_map_pop_centre <- function(name, power = 1, nudge_y = 2000, nudge_x = 500) {
+  sf_location <- ll_get_nuts_it(name = name, level = "lau", resolution = "high", silent = TRUE)
+  centroid <- sf::st_centroid(sf_location %>%
+                                sf::st_transform(crs = 3857)) %>%
+    sf::st_transform(crs = 4326)
+  
+  bbox <- sf::st_bbox(sf_location)
+  desired_bbox <- ll_bbox(sf = sf_location, ratio = "16:9")
+  
+  lau_grid_name_temp <- stringr::str_c(name, "_lau_high-st_intersects")
+  
+  sf_location_grid <- ll_get_population_grid(match_sf = sf_location,
+                                             match_name = lau_grid_name_temp,
+                                             match_country = "IT",
+                                             join = sf::st_intersects,
+                                             silent = TRUE)
+  
+  pop_centroid <- ll_find_pop_centre(sf_location = sf_location,
+                                       sf_population_grid = sf_location_grid,
+                                       power = power)
+  
+  custom_ll_map_pop_grid(name = name, nudge_y = nudge_y, nudge_x = nudge_x) +
+    geom_sf(data = pop_centroid,
+            colour = "blue4",
+            fill = "cornflowerblue",
+            size = 5,
+            shape = 21,
+            alpha = 0.8) +
+    geom_sf_label_repel(data = pop_centroid, mapping = aes(label  = "Population weighted centre"), nudge_y = nudge_y, nudge_x = nudge_x, alpha = 0.8, seed = 1) 
+}
+
+
+custom_ll_map_pop_centre_hr <- function(name, power = 1, nudge_y = 2000, nudge_x = 500) {
+  sf_location <- ll_get_nuts_it(name = name, level = "lau", resolution = "high", silent = TRUE)
+  centroid <- sf::st_centroid(sf_location %>%
+                                sf::st_transform(crs = 3857)) %>%
+    sf::st_transform(crs = 4326)
+  
+  bbox <- sf::st_bbox(sf_location)
+  desired_bbox <- ll_bbox(sf = sf_location, ratio = "16:9")
+  
+  lau_grid_name_temp <- stringr::str_c(name, "_lau_hr-st_intersects")
+  
+  sf_location_grid <- ll_get_population_grid_hr(geo = "IT", 
+                                                match_sf = sf_location,
+                                                match_name = lau_grid_name_temp,
+                                                join = sf::st_intersects,
+                                                silent = TRUE)
+  
+  pop_centroid <- ll_find_pop_centre(sf_location = sf_location,
+                                       sf_population_grid = sf_location_grid,
+                                       power = power)
+  
+  custom_ll_map_pop_grid(name = name, nudge_y = nudge_y, nudge_x = nudge_x, hr = TRUE) +
+    geom_sf(data = pop_centroid,
+            colour = "blue4",
+            fill = "cornflowerblue",
+            size = 5,
+            shape = 21,
+            alpha = 0.8) +
+    geom_sf_label_repel(data = pop_centroid, mapping = aes(label  = "Population weighted centre"), nudge_y = nudge_y, nudge_x = nudge_x, alpha = 0.8, seed = 1) +
+          labs(title = paste(sf_location$COMUNE), 
+       subtitle = "Administrative boundaries, population grid, and centroid",
+       caption = "Source: Istat (CC-BY) for administrative boundaries
+       Facebook High Resolution Population Density Maps (CC-BY)
+       Map tiles by Stamen Design, under CC BY 3.0
+       Base map data by OpenStreetMap, under ODbL.")
+    
+}
+
+
+
+
+theme_set(theme_void(base_family = "Roboto Condensed") +
+            theme(title = element_text(size = 14, face = "bold"),
+                  plot.subtitle = element_text(face = "plain"),
+                  plot.caption = element_text(face = "plain")))
+```
+
+*Preliminary note: All code for this post is [available at this link](https://github.com/giocomai/codebase-blog/tree/master/content/post/2020-03-population-weighted-centre/2020-03-population-weighted-centre.Rmd). Various operations described in these posts were facilitated by a new R package, `[latlon2map](https://github.com/giocomai/latlon2map)`; the package has already a basic vignette, [Removing the boring parts from geocomputation with European data](https://giorgiocomai.eu/latlon2map/articles/removing_the_boring.html).*
+
+For a number of data visualisations and data analysis it is useful to have the coordinates of the centre of a town or municipality. In a [lengthy post (in Italian)](https://medium.com/tantotanto/cerco-un-centro-di-gravit%C3%A0-permanente-per-rappresentare-il-pendolarismo-tra-i-comuni-italiani-20198e33e493), [Andrea Borruso](https://twitter.com/aborruso) highlighted why this can be useful, pointed at a number of alternative solutions, and to some of their shortcomings. In his case, he needed to determine the starting point of lines used to visualise on a map the number of commuters moving between municipalities.
+
+More recently, my colleague [Ornaldo Gjergij](https://twitter.com/ornaldo_) needed it to determine which data point to use to report change of temperature since the 1960s in a given municipality based on Copernicus data. In his case, the solution had to be scalable across Europe and offer consistently meaningful results in the vast majority of cases.
+
+# The problem
+
+In principle, this looks like a reasonably straightforward problem. [Eurostat conveniently distributes geographic data](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units/lau) on all local administrative units in Europe. The easy solution is to let software calculate the centroid for each of them, and  *presto*, mission accomplished.
+
+This would be alright if all municipalities were roundly shaped. Unfortunately, this is rarely the case. Even towns which are as satisfingly regularly-shaped as possible, often have irregular administrative boundaries. Palmanova, in Italy, has an unmistakable centre, but the administrative boundaries of its municipality are not as regularly shaped: the centroid of those boundaries  clearly does not correspond to the town centre.
+
+
+```{r}
+custom_ll_map_centroid("Palmanova", nudge_x = 150, nudge_y = 600)
+```
+
+
+In many cases, the difference is hardly noticeable especially if the zoom on the map is not too close. However, there is a full range of more complicated and not so uncommon cases.
+
+In the European context, things get more complicated and problematic in particular with island arcipelagos (obviously), sparsely populated areas, and mountain regions where large uninhabited areas are by necessity attributed to a given muncipality: the inhabited centre of the municipality is often at the margins of the administrative boundaries. 
+
+In the case of Pinzolo, for example, in Italian Alps, the centre of the municipality is at the utmost South of its administrative boundaries.
+
+```{r}
+custom_ll_map_centroid("Pinzolo")
+```
+
+Besides, it is not uncommon for mountain municipalities to have non-contiguous territory, as mountain pastures and forests were attributed to different communities. In some cases, the non-inhabited part of the municipality in the mountains has a larger surface than the inhabited part, making it problematic to apply the easy solution of picking the centroid of the largest contiguous area: it would just pick a spot close to some mountain peak. This is the case, for example, of Tre Ville, not far from Pinzolo. 
+
+```{r}
+custom_ll_map_centroid("Tre Ville", nudge_y = 3000, )
+```
+
+In the case of island arcipelagos, this approach would likely just pick a spot in the middle of the sea. This is not an issue only of tiny villages, but also for regional centres, such as Aosta, in Italy's North-West.
+
+
+```{r}
+custom_ll_map_centroid("Aosta", nudge_x = 200, nudge_y = 800)
+
+```
+
+# Why is this a problem?
+
+In the case outlined by Andrea Borruso in [the post linked above](https://medium.com/tantotanto/cerco-un-centro-di-gravit%C3%A0-permanente-per-rappresentare-il-pendolarismo-tra-i-comuni-italiani-20198e33e493), the problem is that the visuals are unconvincing to local residents if they do not reflect the actual human geography that they are familiar with. 
+
+In the case of my colleague Ornaldo, defining where a given town actually is has an impact on the data themselves. You can find more details about his work at this link, but here is his problem in brief. One of the datasets distributed by [Copernicus](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-uerra-europe-single-levels) provides detailed data on temperature for the whole period 1961-2018, with data available for a grid covering all of Europe with a precision of 5.5 km. These data are continuous and know no borders, but change of temperature differs considerably even in contiguous grid cells, in particular in mountain or seaside areas: readers familiar with the geography of Italy, for example, will surely understand that a large number of municipalities falls into one of these two categories.
+
+In order to make these data available to the wider public, Ornaldo created an interactive interface enabling readers to find data about their own town (currently available for Italy [link], forthcoming for the resto of Europe). Here is the problem: when talking about the temperature of Aosta, people will have in mind the city of Aosta. For example, when they look at the weather forecast, they see the expected temperature of downtown Aosta, not the one on the neighbouring mountaintop, which would be very different and not really helpful in understanding if you need a coat or not to go out. As a consequence, when reporting temperature change of Aosta, if we want to be fair to the reader, we should give the temperature change in the city of Aosta, not on some mountain in its proximity. This is true also for small municipalities in the mountains, especially if we publish these data with a local audience in mind.
+
+Ultimately, this is relevant also for national audiences, considering that such mountain locations are often outliers and as such are more likely to make headlines: to the extent that it is possible, such headline should make sense, and not simply record whatever municipality happens to have more mountain pastures and peaks within its administrative boundaries. 
+
+# The solution: towns are where people are
+
+Ultimately, towns are where people are. So the best way to find the centre of a municipality could well be to find the population-weighted centre. Given that Eurostat distributes a [population grid](https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/population-distribution-demography/geostat) with data on the number of residents in each square kilometer of the continent, it should be possible to consistently apply this approach for all municipalities in the European Union.
+
+How does this look in practice? Let's start from an easy case: a relatively big town with large non-inhabited areas within its municipal border. If the town centre is where people are, and through the population grid we know where people live, we can just make a weighted average of the coordinates of the centroids of each cell of the population grid. Et voilà, we have a point that can reasonably be understood as a central location of the town. 
+
+
+```{r}
+custom_ll_map_pop_centre(name = "Aosta", power = 1, nudge_x = 200, nudge_y = 800)
+```
+
+Let's move on to more complicated scenarios, e.g. a municipality that has its centre close to its administrative boundaries. A weighted average performs better than the centroid, but sets a point that is still far from where most people live.
+
+```{r}
+custom_ll_map_pop_centre(name = "Pinzolo", power = 1)
+```
+
+Since we are interested in locations where most people live, it probably makes sense to give much more proportional weight to cells where a lot of people live. So let's raise population per cell to the power of 2 to give disproportionate weight to highly inhabited locations. Much better.
+
+```{r}
+custom_ll_map_pop_centre(name = "Pinzolo", power = 2)
+```
+
+
+This works well also with one of the cases mentioned by Andrea Borruso in his post, Bitonto, in Puglia.
+
+```{r}
+custom_ll_map_pop_centre(name = "Bitonto", power = 2, nudge_y = 2500)
+```
+
+Let's move on to more complicated scenarios: municipalities with non-contiguous territory. Having the centre outside of the borders is obviously not ideal. The most straightforward solution would be to pick the centroid of the part with the largest area, but in this case, for example, this would not work. In most cases, the better solution is probably to calculate the population-weighted centre of the most populous contiguous area, and then add a check to ensure that the final point actually falls into the administrative borders.
+
+```{r}
+custom_ll_map_pop_centre(name = "Tre Ville", power = 2, nudge_y = 3000)
+```
+
+Again, this gives a meaningful answer also for some of the island and coastal municipalities mentioned in Borruso's post.
+```{r}
+custom_ll_map_pop_centre(name = "Favignana", power = 2)
+```
+
+```{r}
+custom_ll_map_pop_centre(name = "Marsala", power = 2, nudge_y = 5000)
+```
+
+Even in Palmanova the population-weighted centre falls reasonably close to where we would expect it to be. I would not win a darts tournament with this shot, but it definitely would not be a miss.
+
+```{r}
+custom_ll_map_pop_centre(name = "Palmanova", power = 2, nudge_x = 150, nudge_y = 1100)
+```
+
+## All local administrative units, all of the EU?
+
+Sure, why not? You can download the resulting datasets with the coordinates of the centre of municipalities of local administrative units calculated as detailed in this post from this link [coming soon-ish: on my laptop, it should take a few dozens of hours to process the more than 100.000 local administrative units included in the dataset].
+
+```{r eval = FALSE}
+lau_eu <- ll_get_lau_eu(silent = TRUE)
+
+if (fs::file_exists("pop_grid_countries.rds")) {
+  pop_grid_countries <- readr::read_rds("pop_grid_countries.rds")
+} else {
+  pop_grid <- ll_get_population_grid()
+  pop_grid_countries <- unique(pop_grid$CNTR_CODE)
+  readr::write_rds(x = pop_grid_countries, path = "pop_grid_countries.rds")
+}
+
+
+lau_eu_with_grid <- lau_eu %>% dplyr::filter(is.element(CNTR_CODE, pop_grid_countries))
+
+pb <- dplyr::progress_estimated(n = nrow(lau_eu_with_grid))
+
+if (fs::file_exists("all_pop_centres_df.rds")==FALSE) {
+  all_pop_centres_df <-
+  purrr::map2_dfr(.x = lau_eu_with_grid$LAU_LABEL,
+              .y = lau_eu_with_grid$CNTR_CODE,
+              .f = function(x, y) {
+                pb$tick()$print()
+                lau_grid_name_temp <- stringr::str_c(x, "_lau_eu_1m-st_intersects")
+                
+                sf_location <- ll_get_lau_eu(name = x,
+                                             silent = TRUE)
+                
+                sf_location_grid <- ll_get_population_grid(match_sf = sf_location,
+                                                           match_name = lau_grid_name_temp,
+                                                           match_country = y,
+                                                           join = sf::st_intersects,
+                                                           silent = TRUE)
+                
+                ll_find_pop_centre(sf_location = sf_location,
+                                   sf_population_grid = sf_location_grid,
+                                   power = 2) %>% 
+                  sf::st_coordinates() %>%
+                  tibble::as_tibble() %>% 
+                  dplyr::transmute(longitude = X, latitude = Y, name = x, country = y)
+
+              })
+  readr::write_rds(x = all_pop_centres_df, path = "all_pop_centres_df.rds")
+  readr::write_csv(x = all_pop_centres_df, path = "all_pop_centres_df.csv")
+}
+
+
+
+#do.call(rbind, my_list)
+
+```
+
+# Is this it?
+
+This solution is not going to work in *all* cases. Including in the calculation grid cells that are not completely inside the administraive boundaries of a given municipality is necessary (some municipalities are very small, and as appears from the example above some have most of its residents at the margins), but may also lead to include in the calculation residents from neighbouring areas.
+
+Again, in [his post Andrea Borruso mentions](https://medium.com/tantotanto/cerco-un-centro-di-gravit%C3%A0-permanente-per-rappresentare-il-pendolarismo-tra-i-comuni-italiani-20198e33e493) a number of alternative approaches. Looking for the town centres as defined in OpenStreetMap may actually give better results in most cases. But the approach outlined in this post is more flexible, and could be used to find the centre of other territorial units, such as electoral precints or census areas.
+
+
+This approach could be further improved by having more detailed data. And as it turns out, they exist. Facebook (yes, Facebook) distributes with a permissive Creative Commons license high resolution population maps: "these high-resolution maps estimate the number of people living within 30-meter grid tiles in nearly every country around the world." The [full methodology is detailed on their website](https://dataforgood.fb.com/docs/methodology-high-resolution-population-density-maps-demographic-estimates/), but in brief, they take available data and adjust them using satellite imagery and machine learning. These population grids been updated in March 2020, with most recent data referring to 2019. [They can be downloaded freely](https://data.humdata.org/organization/facebook), yet they seem to be little used, with their own download stats recording only a few dozen hits per month for most country-level data.
+
+Using such granular data, do we get more accurate centres?  
+
+Apparently, not always: in the case of Pinzolo, Facebook's machine learning based on satellite imagery seemingly mistaked facilities for ski-goers with residential housing, moving the population-weighted centre furhter away from the actual village. 
+
+```{r}
+custom_ll_map_pop_centre_hr(name = "Pinzolo", power = 2)
+```
+
+Furhter increasing the disbalance in favour of highly populated areas, by raising the residents of each cell by the power of 5, reduces the impact of such (probably uncommon) distorsions in the data.
+
+```{r}
+custom_ll_map_pop_centre_hr(name = "Pinzolo", power = 5)
+```
+
+But perhaps most importantly, re-calculating the population-weighted centre with these parameteres and increased detail, here is what I get:
+
+```{r}
+custom_ll_map_pop_centre_hr(name = "Palmanova", power = 5, nudge_y = 800)
+```
+
+Bingo! Top score!!! 🎯🎉🍾🏆
+
+__P.S.__: while writing this post, as I was slowed down by some of the tedious aspects that often accompany geocomputation with data released by the EU, I made a package for the R programming language that eases some of the pain. It's an early release, and will become more feature-rich in the coming month, but you may still give it a spin. The package is [available on GitHub](https://github.com/giocomai/latlon2map), and already has a preliminary [vignette outlining some of its features](). 

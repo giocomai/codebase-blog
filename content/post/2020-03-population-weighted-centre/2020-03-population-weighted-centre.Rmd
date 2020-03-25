@@ -387,4 +387,4 @@ custom_ll_map_pop_centre_hr(name = "Palmanova", power = 5, nudge_y = 800)
 
 Bingo! Top score!!! 🎯🎉🍾🏆
 
-__P.S.__: while writing this post, as I was slowed down by some of the tedious aspects that often accompany geocomputation with data released by the EU, I made a package for the R programming language that eases some of the pain. It's an early release, and will become more feature-rich in the coming month, but you may still give it a spin. The package is [available on GitHub](https://github.com/giocomai/latlon2map), and already has a preliminary [vignette outlining some of its features](). 
+__P.S.__: while writing this post, as I was slowed down by some of the tedious aspects that often accompany geocomputation with data released by the EU, I made a package for the R programming language that eases some of the pain. It's an early release, and will become more feature-rich in the coming month, but you may still give it a spin. The package is [available on GitHub](https://github.com/giocomai/latlon2map), and already has a preliminary [vignette outlining some of its features](https://giorgiocomai.eu/latlon2map/articles/removing_the_boring.html). 

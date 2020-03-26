@@ -303,9 +303,14 @@ custom_ll_map_pop_centre(name = "Palmanova", power = 2, nudge_x = 150, nudge_y =
 
 ## All local administrative units, all of the EU?
 
-Sure, why not? You can download the resulting datasets with the coordinates of the centre of municipalities of local administrative units calculated as detailed in this post from this link [coming soon-ish: on my laptop, it should take more than 100 hours to process the more than 100.000 local administrative units included in the dataset].
+Sure, why not? You can download the resulting datasets with the coordinates of the centre of municipalities of local administrative units calculated as detailed in this post from this link [coming soon-ish: on my laptop, it should take a couple of days to process the more than 100.000 local administrative units included in the dataset].
 
 ```{r eval = FALSE}
+
+library("tidyverse", quietly = TRUE)
+library("sf", quietly = TRUE)
+library("latlon2map")
+ll_set_folder(path = "~/R")
 lau_eu <- ll_get_lau_eu(silent = TRUE)
 
 if (fs::file_exists("pop_grid_countries.rds")) {
@@ -317,9 +322,15 @@ if (fs::file_exists("pop_grid_countries.rds")) {
 }
 
 
-lau_eu_with_grid <- lau_eu %>% dplyr::filter(is.element(CNTR_CODE, pop_grid_countries)) 
+lau_eu_with_grid <- lau_eu %>%
+  dplyr::filter(is.element(CNTR_CODE, pop_grid_countries)) %>%
+  dplyr::arrange(CNTR_CODE)
 
+current_country <- "AL"
 
+sf_location_grid_country <- ll_get_population_grid(match_country = current_country,
+                                                   join = sf::st_intersects,
+                                                   silent = TRUE)
 
 pb <- dplyr::progress_estimated(n = nrow(lau_eu_with_grid))
 
@@ -335,10 +346,20 @@ if (fs::file_exists("all_pop_centres_df.rds")==FALSE) {
                                              lau_sf = lau_eu_with_grid,
                                              silent = TRUE)
                 
+                if (y == current_country) {
+                  # do nothing
+                } else {
+                  sf_location_grid_country <- ll_get_population_grid(match_country = y,
+                                                   join = sf::st_intersects,
+                                                   silent = TRUE)
+                  current_country <- y
+                }
+                
                 sf_location_grid <- ll_get_population_grid(match_sf = sf_location,
                                                            match_name = lau_grid_name_temp,
                                                            match_country = y,
                                                            join = sf::st_intersects,
+                                                           population_grid_sf = sf_location_grid_country,
                                                            silent = TRUE)
                 
                 ll_find_pop_centre(sf_location = sf_location,

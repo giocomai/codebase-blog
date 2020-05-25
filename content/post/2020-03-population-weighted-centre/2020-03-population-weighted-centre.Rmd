@@ -361,14 +361,16 @@ if (fs::file_exists("all_pop_centres_df.rds")==FALSE) {
                                                            join = sf::st_intersects,
                                                            population_grid_sf = sf_location_grid_country,
                                                            silent = TRUE)
-                
-                ll_find_pop_centre(sf_location = sf_location,
+                if (nrow(sf_location_grid)>0) {
+                  ll_find_pop_centre(sf_location = sf_location,
                                    sf_population_grid = sf_location_grid,
                                    power = 2) %>% 
                   sf::st_coordinates() %>%
                   tibble::as_tibble() %>% 
                   dplyr::transmute(longitude = X, latitude = Y, name = x, country = y)
-
+                } else {
+                  tibble::tibble(longitude = NA, latitude = NA, name = x, country = y)
+                }
               })
   readr::write_rds(x = all_pop_centres_df, path = "all_pop_centres_df.rds")
   readr::write_csv(x = all_pop_centres_df, path = "all_pop_centres_df.csv")

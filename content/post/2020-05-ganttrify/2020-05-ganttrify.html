@@ -1,8 +1,8 @@
 ---
-title: 'Beautiful Gantt chart with ggplot2'
+title: 'Beautiful Gantt charts with ggplot2'
 author: Giorgio Comai
 date: '2020-05-25'
-slug: ganttrify
+slug: ganttrify-gantt-charts-ggplot2-r
 categories:
   - Data notes
 tags:
@@ -27,7 +27,7 @@ featured:
 <p><a href="https://en.wikipedia.org/wiki/Gantt_chart">Wikipedia</a> will tell you more, but in the context of grant applications a Gantt chart is basically a timeline of activities, showing visually when a given “working package” or activity starts or ends, which activities happen at the same time, when a given milestone or event will take place, etc.</p>
 <p>There are many different ways to go about it, but there is a common denominator to all Gantt charts I have ever seen: they are ugly. You don’t need to take my word for this: just keep scrolling through an <a href="https://www.qwant.com/?q=gantt%20chart&amp;t=images">image search of “Gantt chart”</a> on a search engine and you will be confronted with an endless sea of pure ugliness, dubious colour palettes, and clear evidence of interns torturing Microsoft Excel into making something that looks like a Gantt chart by using the background colours of cells.</p>
 <div class="figure">
-<img src="gantt_img_screenshot.png" style="width:100.0%" alt="" />
+<img src="/img/2020-05-ganttrify/gantt_img_screenshot.png" style="width:100.0%" alt="" />
 <p class="caption"><em>Painful to the eye, but there’s no hiding from the truth.</em></p>
 </div>
 <p>I confess, I am also guilty of this crime. But when last year a colleague asked to help them out with making a Gantt chart for a new grant application, I felt the time had come to stand up and say loud and clear: “I will not make another ugly Gantt chart by colouring the cells of a spreadsheet.” So I scourged the internet for alternative solutions, dedicated software… tutorials on YouTube, <a href="https://stackoverflow.com/questions/3550341/gantt-charts-with-r">questions on StackOverflow</a>, hidden repositories on GitHub, embroidery patterns on Pinterest… but I found nothing that wouldn’t hurt my eyes.</p>
@@ -37,16 +37,16 @@ featured:
 <h2>Nice-looking Gantt charts and how to make them</h2>
 <p>I am no artist or designer, so this could be much improved, but here’s how a basic Gantt chart made with <code>ganttrify</code> would look for a stereotyped research project.</p>
 <div class="figure">
-<img src="README-gantt_charts_resized_text-1.png" style="width:100.0%" alt="" />
+<img src="/img/2020-05-ganttrify/gantt_example.png" style="width:100.0%" alt="" />
 <p class="caption"><em>Much better.</em></p>
 </div>
 <p>Projects in data journalism could be much shorter, but may still require a Gantt chart to represent a timeline of activities.</p>
 <p>If you are familiar with the R programming language, you probably want to check out the repository on GitHub with more details on the customisations (you will be happy to hear that <code>ganttrify</code> outputs ggplot2 objects that you can easily customise further… you will also notice I first drafted the “readme” as I was finalising a grant application).</p>
 <p>If you are not familiar with R, or you are a data journalist that just wants to get back to their work and suggest an easy tool to whoever is writing the grant application with them, here is the solution you were looking for: <a href="https://ganttrify.giorgiocomai.eu/">a straightforward online interface that makes it easy to create and customise decent-looking Gantt charts</a>.</p>
 <div class="figure">
-<img src="shiny_ganttrify_screenshot.png" style="width:100.0%" alt="" />
+<img src="/img/2020-05-ganttrify/shiny_ganttrify_screenshot.png" style="width:100.0%" alt="" />
 <p class="caption"><em>Nice and easy!</em></p>
 </div>
 <p>Check out the demo tables in the app to see how you should format the data input (start and end date can be either given as project-month numbers, or as dates: make sure you tell the app your preferred input formats to prevent bumping into errors). If you edit the inputs in Google Drive, make sure to paste your link and click on “Update chart” on top to load your updated data.</p>
-<p>It even suggest using colour palettes inspired by Wes Anderson movies (<a href="https://github.com/karthik/wesanderson">Tumblr</a>/<a href="https://wesandersonpalettes.tumblr.com/">R package</a>): what’s not to like?</p>
+<p>It even suggest using colour palettes inspired by Wes Anderson movies (<a href="https://wesandersonpalettes.tumblr.com/">Tumblr</a>/<a href="https://github.com/karthik/wesanderson">R package</a>): what’s not to like?</p>
 </div>

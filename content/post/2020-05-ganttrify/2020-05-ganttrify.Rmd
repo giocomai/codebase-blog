@@ -1,8 +1,8 @@
 ---
-title: 'Beautiful Gantt chart with ggplot2'
+title: 'Beautiful Gantt charts with ggplot2'
 author: Giorgio Comai
 date: '2020-05-25'
-slug: ganttrify
+slug: ganttrify-gantt-charts-ggplot2-r
 categories:
   - Data notes
 tags:
@@ -40,7 +40,7 @@ Having worked with no profits, in academia, and now in data journalism, I have f
 
 There are many different ways to go about it, but there is a common denominator to all Gantt charts I have ever seen: they are ugly. You don't need to take my word for this: just keep scrolling through an [image search of "Gantt chart"](https://www.qwant.com/?q=gantt%20chart&t=images) on a search engine and you will be confronted with an endless sea of pure ugliness, dubious colour palettes, and clear evidence of interns torturing Microsoft Excel into making something that looks like a Gantt chart by using the background colours of cells.
 
-![*Painful to the eye, but there's no hiding from the truth.*](gantt_img_screenshot.png){width=100%}
+![*Painful to the eye, but there's no hiding from the truth.*](/img/2020-05-ganttrify/gantt_img_screenshot.png){width=100%}
 
 I confess, I am also guilty of this crime. But when last year a colleague asked to help them out with making a Gantt chart for a new grant application, I felt the time had come to stand up and say loud and clear: "I will not make another ugly Gantt chart by colouring the cells of a spreadsheet." So I scourged the internet for alternative solutions, dedicated software... tutorials on YouTube, [questions on StackOverflow](https://stackoverflow.com/questions/3550341/gantt-charts-with-r), hidden repositories on GitHub, embroidery patterns on Pinterest... but I found nothing that wouldn't hurt my eyes.
 
@@ -50,7 +50,7 @@ Faced with what is evidently my posh taste for Gantt charts, I had no alternativ
 
 I am no artist or designer, so this could be much improved, but here's how a basic Gantt chart made with `ganttrify` would look for a stereotyped research project.
 
-![*Much better.*](README-gantt_charts_resized_text-1.png){width=100%}
+![*Much better.*](/img/2020-05-ganttrify/gantt_example.png){width=100%}
 
 Projects in data journalism could be much shorter, but may still require a Gantt chart to represent a timeline of activities.
 
@@ -58,8 +58,8 @@ If you are familiar with the R programming language, you probably want to check 
 
 If you are not familiar with R, or you are a data journalist that just wants to get back to their work and suggest an easy tool to whoever is writing the grant application with them, here is the solution you were looking for: [a straightforward online interface that makes it easy to create and customise decent-looking Gantt charts](https://ganttrify.giorgiocomai.eu/). 
 
-![*Nice and easy!*](shiny_ganttrify_screenshot.png){width=100%}
+![*Nice and easy!*](/img/2020-05-ganttrify/shiny_ganttrify_screenshot.png){width=100%}
 
 Check out the demo tables in the app to see how you should format the data input (start and end date can be either given as project-month numbers, or as dates: make sure you tell the app your preferred input formats to prevent bumping into errors). If you edit the inputs in Google Drive, make sure to paste your link and click on "Update chart" on top to load your updated data.
 
-It even suggest using colour palettes inspired by Wes Anderson movies ([Tumblr](https://github.com/karthik/wesanderson)/[R package](https://wesandersonpalettes.tumblr.com/)): what's not to like?
+It even suggest using colour palettes inspired by Wes Anderson movies ([Tumblr](https://wesandersonpalettes.tumblr.com/)/[R package](https://github.com/karthik/wesanderson)): what's not to like?

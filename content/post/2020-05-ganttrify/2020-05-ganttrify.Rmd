@@ -1,7 +1,7 @@
 ---
 title: 'Beautiful Gantt charts with ggplot2'
 author: Giorgio Comai
-date: '2020-05-25'
+date: '2020-06-04'
 slug: ganttrify-gantt-charts-ggplot2-r
 categories:
   - Data notes
@@ -52,10 +52,12 @@ Projects in data journalism will look different, but may well still require a Ga
 
 If you are familiar with the R programming language, you probably want to check out [the repository on GitHub](https://github.com/giocomai/ganttrify/) with more details on the customisations (you will be happy to hear that `ganttrify` outputs `ggplot2` objects that you can easily customise further... you will also notice I first drafted the "readme" as I was finalising a grant application).
 
-If you are not familiar with R, or you are a data journalist that just wants to get back to their work and suggest an easy tool to whoever is writing the grant application with them, here is the solution you were looking for: [a straightforward online interface that makes it easy to create and customise decent-looking Gantt charts](https://ganttrify.giorgiocomai.eu/). 
+If you are not familiar with R, or you are a data journalist who just wants to get back to their work and suggest an easy tool to whoever is writing the grant application with them, here is the solution you were looking for: [a straightforward online interface that makes it easy to create and customise decent-looking Gantt charts](https://apps.europeandatajournalism.eu/app/ganttrify). 
 
 ![*Nice and easy!*](/img/2020-05-ganttrify/shiny_ganttrify_screenshot.png){width=100%}
 
 Check out the demo tables in the app to see how you should format the data input (start and end date can be either given as project-month numbers, or as dates: make sure you tell the app your preferred input formats to prevent bumping into errors). If you edit the inputs in Google Drive, make sure to paste your link and click on "Update chart" on top to load your updated data.
 
-`ganttrify` even suggests using colour palettes inspired by Wes Anderson movies ([Tumblr](https://wesandersonpalettes.tumblr.com/)/[R package](https://github.com/karthik/wesanderson)) to make sure your Gantt chart will look fashionable: what's not to like? 
+`ganttrify` even suggests using colour palettes inspired by Wes Anderson movies ([Tumblr](https://wesandersonpalettes.tumblr.com/)/[R package](https://github.com/karthik/wesanderson)) to make sure your Gantt chart will look fashionable: what's not to like?
+
+Best of luck with your next grant application!

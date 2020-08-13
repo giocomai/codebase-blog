@@ -85,7 +85,9 @@ Google Earth Studio allows for the creation of video clips of stunning quality. 
 
 However, while working on this video, I had the feeling I was somehow walking in mostly uncharted territory: if somebody got geographic data out of R, and used them to produce video clips with Google Earth Studio, they did not leave many traces online (there is however plenty of [tutorials and examples on YouTube](https://www.youtube.com/results?search_query=google+earth+studio) for more generic uses not related to data). Hopefully, the references included in this post will be of use to others considering to join the fun and start using Google Earth Studio as a data visualisation tool.
 
-*All files and scripts used to produce the above video are available at this link.*
+*All files and scripts used to produce the above video are [available in this repo](https://github.com/giocomai/google_earth_studio_with_R_mescan_surfex_2m).*
+
+*All scripts used to generate the data at the base of these data visualisations are [published in this repo](https://github.com/giocomai/mescan_surfex_2m/).*
 
 
 

@@ -17,6 +17,9 @@ However, so far I have not really seen it used for data visualisation, nor I hav
 
 In this post, I will describe how I made this video:
 
+{{< youtube OmWBLfg4INE >}}
+
+Do enjoy it in full screen. If you are here just for the action, you may want to skip past the first couple of minutes.
 
 This will be something in between a product review and a collection of points of reference that may be of use to anyone tempted by the idea of using Google Earth for data visualisation. The workflow described in this post is less than ideal, but perhaps this can still be useful as a starting point for someone considering to give it a spin.
 
@@ -85,7 +88,7 @@ Google Earth Studio allows for the creation of video clips of stunning quality. 
 
 However, while working on this video, I had the feeling I was somehow walking in mostly uncharted territory: if somebody got geographic data out of R, and used them to produce video clips with Google Earth Studio, they did not leave many traces online (there is however plenty of [tutorials and examples on YouTube](https://www.youtube.com/results?search_query=google+earth+studio) for more generic uses not related to data). Hopefully, the references included in this post will be of use to others considering to join the fun and start using Google Earth Studio as a data visualisation tool.
 
-*All files and scripts used to produce the above video are [available in this repo](https://github.com/giocomai/google_earth_studio_with_R_mescan_surfex_2m).*
+*All files and scripts used to produce the above video are [available in this repo](https://github.com/giocomai/google_earth_studio_with_R_mescan_surfex_2m). Files that can be used directly with Google Earth Studio [can be downloaded from this link](https://github.com/giocomai/google_earth_studio_with_R_mescan_surfex_2m/releases/tag/v1.0). If you see oversized labels in the preview pane, this is due to the fact that these files have been optimised for export in 4k.* 
 
 *All scripts used to generate the data at the base of these data visualisations are [published in this repo](https://github.com/giocomai/mescan_surfex_2m/).*
 

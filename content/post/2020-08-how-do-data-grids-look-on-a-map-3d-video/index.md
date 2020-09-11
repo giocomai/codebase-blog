@@ -12,7 +12,7 @@ tags:
 
 In this video, I point at some of the issues that characterise data grids and that may generate misunderstandings. 
 
-{{< youtube OmWBLfg4INE >}}
+{{< youtube cAzMzIepOC8 >}}
 
 In the video, I mention how gridded data can be generated via satellite imagery and machine learning techniques. Of course, such data can be generated also via other means.
 

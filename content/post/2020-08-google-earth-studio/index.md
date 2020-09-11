@@ -11,13 +11,13 @@ tags: []
 
 Here is their own promo video:
 
-{{< youtube cAzMzIepOC8 >}}
+{{< youtube K5i6tjtVDkA >}}
 
 However, so far I have not really seen it used for data visualisation, nor I have seen any post online discussing how to use Google Earth Studio with data. So... I decided to give it a try, and report back.
 
 In this post, I will describe how I made this video:
 
-{{< youtube OmWBLfg4INE >}}
+{{< youtube cAzMzIepOC8 >}}
 
 Do enjoy it in full screen. If you are here just for the action, you may want to skip past the first couple of minutes.
 

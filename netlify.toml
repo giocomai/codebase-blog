@@ -1,0 +1,14 @@
+[build] 
+  publish = "public"
+  command = "hugo"
+
+[context.production.environment]
+  HUGO_VERSION = "0.70.0" 
+  HUGO_ENV = "production"
+  HUGO_ENABLEGITINFO = "false"
+  
+[context.branch-deploy.environment]
+  HUGO_VERSION = "0.70.0"
+
+[context.deploy-preview.environment]
+  HUGO_VERSION = "0.70.0"

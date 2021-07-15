@@ -1,0 +1,809 @@
+---
+title: Finding gendered street names. A step-by-step walkthrough with R
+author: Giorgio Comai
+date: '2021-07-15'
+categories:
+  - Data notes
+tags:
+  - dataviz
+  - maps
+  - rstats
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>EDJNet has recently released the first pilot version of “<a href="https://mappingdiversity.eu/">Mapping diversity</a>”: it shows for the main city in each of Italy’s regions how many streets are dedicated to men and women and includes details about who these streets were dedicated to. In a visually impressive format developed by <a href="https://sheldon.studio/">Sheldon.studio</a> with text and analysis by <a href="https://twitter.com/alice_corona">Alice Corona</a>, it highlights that many more streets are dedicated to men than to women, and that many of those women are Catholic saints or other religious figures.</p>
+<p>This is an ambitious project, that required manually checking about 40 000 street names and developing custom solutions, but is actually only the start of more ambitious edeavours still.</p>
+<div id="how-it-started" class="section level2">
+<h2>How it started</h2>
+<p>The issue of gendered street names has received increasing attention in recent years. In Italy, for example, the association <a href="https://www.toponomasticafemminile.com/">Toponomastica femminile</a> has an impressive and rather comprehensive database of all streets dedicated to women in the vast majority of Italy’s municipalities that has been manually curated by volunteer contributors for years.</p>
+<p>A couple of years ago, in March 2019, I felt that it was worth working on tools that would make it possible to scale such efforts and visualise the result on a map. So I created a package for the R programming language, <a href="https://giocomai.github.io/genderedstreetnames/articles/genderedstreetnames.html"><code>genderedstreetnames</code></a>, that would facilitate the process of extracting street names and showing the gender of individuals to whom streets are dedicated. The approach I used was functional, but I did not have the time to develop it further or to build useful outputs on it.</p>
+<p>In the meantime, a growing number of similar efforts have appeared, such as <a href="https://geochicasosm.github.io/lascallesdelasmujeres/">Las Calles de las mujeres</a> and <a href="https://equalstreetnames.org/">Equal street names</a>.</p>
+<p>They are both great, but they still largely depend on manually curated efforts done city by city. As I planned to get back working on this, I did so thinking more about scalability and adaptability: the final workflow would need to be easily scalable and amenable to deal with other dimensions, beyond gender.</p>
+<p>With this in mind, I created <a href="https://edjnet.github.io/tidywikidatar/"><code>tidywikidatar</code></a>, an R package that facilitates getting data out of Wikidata in a tidy format, and used it for matching street names to individuals, in order to collect not only their gender, but also when they were born, their profession, etc.</p>
+<p>The final component part of the toolbox needed to facilitate a smooth replication of the process is an interactive web interface that makes it easy manually check and fix what automatic matching of street names and individuals got wrong. We have used such an interface internally for “<a href="https://mappingdiversity.eu/">Mapping diversity</a>”, but it is not yet quite ready for public consumption. We will get there in the coming months. Once that is ready, we will ensure easy distribution of the datasets thus generated and strive for compatibility with other existing initiatives. Hopefully, this will also encourage upstream contributions to Wikidata and OpenStreetMap when the data are incomplete.</p>
+<p>In the meantime, I will outline all the steps taken to generate the data at the base of “<a href="https://mappingdiversity.eu/">Mapping diversity</a>”. The remaining part of this post is a slightly revised version of a <a href="https://giocomai.github.io/genderedstreetnames/articles/genderedstreetnames.html">vignette</a> written for the package <a href="https://giocomai.github.io/genderedstreetnames/"><code>genderedstreetnames</code></a>. The output is very similar, but the code is now based on more solid foundations.</p>
+</div>
+<div id="step-by-step" class="section level2">
+<h2>Step by step</h2>
+<p>In order to find out how many street are dedicated to men and how many to women, it is necessary to:</p>
+<ol style="list-style-type: decimal">
+<li>find a dataset that includes all street names of a given city or country</li>
+<li>find out in a systematic (and ideally, at least partly automatic) way which of those streets are dedicated to persons, and among them which are dedicated to either a man or a woman.</li>
+<li>manually check if the data gathered in the previous step are correct</li>
+<li>visualise the results</li>
+</ol>
+<p>The procedure described in this post addresses instances when a street is dedicated to a single person, and that person can be identified as either male or female. This reductionist approach is of course far from unproblematic, as it leaves out street names dedicated to more than a person, gendered groups of people, as well as people with non-binary gender identities (see a slightly longer elaboration of such considerations in the <a href="https://mappingdiversity.eu/about/">about page of Mapping Diversity</a>). Yet it may provide useful inputs for a public conversation around gender and toponymy. Besides, this approach can still serve as a basis for alternative analyses.</p>
+<p>This post makes extensive use of two packages built by this author, one for downloading and processing geographic files - <a href="https://giocomai.github.io/latlon2map/"><code>latlon2map</code></a> - and the other for searching, caching, and parsing Wikidata - <a href="https://edjnet.github.io/tidywikidatar/"><code>tidywikidatar</code></a>, now on CRAN.</p>
+<p>You can install them with the following commands:</p>
+<pre class="r"><code>install.packages(&quot;tidywikidatar&quot;)
+# install.packages(&quot;remotes&quot;)
+remotes::install_github(repo = &quot;giocomai/latlon2map&quot;)</code></pre>
+<p>Before starting, let’s load all required libraries.</p>
+<pre class="r"><code>library(&quot;latlon2map&quot;) # for retrieving and processing geographic data
+library(&quot;tidywikidatar&quot;) # for retrieving and processing Wikidata
+library(&quot;dplyr&quot;) # for data wrangling
+library(&quot;ggplot2&quot;) # for data visualisation
+library(&quot;purrr&quot;) # for serialising data processing
+library(&quot;progress&quot;) # progress bar to know how long we&#39;ll have to wait
+library(&quot;sf&quot;) # for processing geographic data
+library(&quot;tmap&quot;) # for plotting interactive maps more easily</code></pre>
+<p>Both <code>latlon2map</code> and <code>tidywikidatar</code> make it easy to cache data locally. If you don’t set the cache folder, an <code>ll_data</code> and a <code>tw_data</code> folder will be created in your current working diretory. It may be useful to keep such files out of the project folder, in a location that makes stored data available to other projects that may rely on the same data.</p>
+<pre class="r"><code>ll_set_folder(path = &quot;~/R/ll_data/&quot;)</code></pre>
+<pre><code>## [1] &quot;~/R/ll_data/&quot;</code></pre>
+<pre class="r"><code>tw_set_cache_folder(path = &quot;~/R/tw_data/&quot;)
+tw_enable_cache()</code></pre>
+</div>
+<div id="step-1-get-street-names" class="section level2">
+<h2>Step 1: Get street names</h2>
+<p>There are different possible sources for street names. Relevant open data are often made available by national or local authorities. However, in order to have geolocalised street names, the most straightforward source is OpenStreetMap.</p>
+<p>As an example, I will process data on street names in Romania. You can make the same with other countries simply by changing the relevant parameter. The following command downloads the shapefile for OpenStreetMap data related to a given country from <a href="http://download.geofabrik.de/">Geofabrik’s website</a> in zip files. As usual, all credit for OpenStreetMap goes to ©OpenStreetMap contributors.</p>
+<pre class="r"><code>options(timeout = 600) # increase default timeout to enable download of bigger files
+ll_osm_download(countries = &quot;Romania&quot;)</code></pre>
+<p>To process data further, files related to roads need to be extracted from the zip file, which can conveniently be done with the dedicated function, <code>ll_extract_roads()</code>, and then loaded with <code>ll_osm_get_roads()</code>.</p>
+<pre class="r"><code>ll_osm_extract_roads(countries = &quot;Romania&quot;) # just takes the shapefiles of roads from the zip file
+roads &lt;- ll_osm_get_roads(country = &quot;Romania&quot;) # loads them into R as an sf object</code></pre>
+<pre><code>## Reading layer `gis_osm_roads_free_1&#39; from data source 
+##   `/home/g/R/ll_data/osm_roads_shp/romania/romania&#39; using driver `ESRI Shapefile&#39;
+## Simple feature collection with 736031 features and 10 fields
+## Geometry type: LINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: 20.2216 ymin: 43.60464 xmax: 29.72713 ymax: 48.2918
+## Geodetic CRS:  WGS 84</code></pre>
+<p>Let’s focus on a single city.</p>
+<p>For a start, we need the borders of the municipality we want to focus on. We will take the administrative borders from an EU database with all European municipalities (the database will be downloaded at first run, and then be cached locally). Let’s take the city of Sibiu, in Transylvania. This is how the borders of the municipality look like:</p>
+<pre class="r"><code>city_boundaries &lt;- ll_get_lau_eu(name = &quot;Municipiul Sibiu&quot;)</code></pre>
+<pre><code>## ℹ © EuroGeographics for the administrative boundaries</code></pre>
+<pre class="r"><code># run ll_get_lau_eu() to see all available locations
+
+ggplot() +
+  geom_sf(data = city_boundaries)</code></pre>
+<p><img src="staticunnamed-chunk-6-1.png" width="672" /></p>
+<p>Oh, no! Sibiu is one of those cities with some speck of territory detached from the core part of its administrative boundaries! Let’s focus on the town itself.</p>
+<pre class="r"><code>city_boundaries &lt;- city_boundaries %&gt;%
+  st_cast(to = &quot;POLYGON&quot;) %&gt;%
+  mutate(area = st_area(geometry)) %&gt;%
+  dplyr::slice_max(area)</code></pre>
+<pre><code>## Warning in st_cast.sf(., to = &quot;POLYGON&quot;): repeating attributes for all sub-
+## geometries for which they may not be constant</code></pre>
+<pre class="r"><code>ggplot() +
+  geom_sf(data = city_boundaries)</code></pre>
+<p><img src="staticunnamed-chunk-7-1.png" width="672" /></p>
+<p>Much better.</p>
+<p>We can now query our dataset, and find out which of all the streets and squares in Romania are located within the municipality of Sibiu. These are all the streets located in the municipality of Sibiu:</p>
+<pre class="r"><code>city_streets &lt;- roads %&gt;%
+  filter(st_within(
+    x = roads,
+    y = city_boundaries,
+    sparse = FALSE
+  ))
+
+ggplot() +
+  geom_sf(data = city_boundaries) +
+  geom_sf(data = city_streets, size = 0.2)</code></pre>
+<p><img src="staticunnamed-chunk-8-1.png" width="672" /></p>
+<p>Good. Now it’s time to check out to what or whom these streets are dedicated.</p>
+</div>
+<div id="step-2-find-out-which-streets-are-dedicated-to-either-a-man-or-a-woman" class="section level2">
+<h2>Step 2: find out which streets are dedicated to either a man or a woman</h2>
+<p>There are various approaches for facilitating the identification of the gender starting from names, and most of them use the first name as a hint.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>This is an option, but may lead to some mistakes. I propose to try first to match the name of person to a Wikidata id (after all, if a person has been entitled a street it is quite likely that they will also be on Wikipedia), and only if this does not work then fall back on different solutions. Besides, using Wikipedia should also allow to match cases when the database does not include the first name of the person to which it is dedicated (e.g. “Mozart street” is an easy one based on Wikidata, but would lead to no results based on the missing first name). Finally, using Wikipedia as a reference should not only lead to less mistakes, but provide also a brief characterisation of the individual which can then be used at a later stage in the analysis.</p>
+<p>First, however, we need to “clean” street names in order to keep only the part of the street name that may potentially refer to a person. This is language specific and may involve removing the first or the last word. For example, this means removing “street” from “James Joyce Street” in order to look for “James Joyce” on Wikidata, which will correctly result in identifying the male Irish novelist and poet.</p>
+<p>In the case of Romania, it is quite easy to deal with this issue, as it suffices to remove the first word of the street names:</p>
+<pre class="r"><code>city_street_names &lt;- city_streets %&gt;%
+  sf::st_set_geometry(NULL) %&gt;%
+  dplyr::filter(is.na(name) == FALSE) %&gt;%
+  dplyr::transmute(name,
+    name_clean = stringr::str_remove(
+      string = name,
+      pattern = &quot;\\w+\\b&quot;
+    ) %&gt;%
+      stringr::str_squish()
+  ) %&gt;%
+  tidyr::drop_na() %&gt;%
+  dplyr::filter(nchar(name_clean) &gt; 1)
+
+head(city_street_names, n = 10) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">name</th>
+<th align="left">name_clean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Strada General Magheru</td>
+<td align="left">General Magheru</td>
+</tr>
+<tr class="even">
+<td align="left">Strada 9 Mai</td>
+<td align="left">9 Mai</td>
+</tr>
+<tr class="odd">
+<td align="left">Strada Bâlea</td>
+<td align="left">Bâlea</td>
+</tr>
+<tr class="even">
+<td align="left">Strada Constituției</td>
+<td align="left">Constituției</td>
+</tr>
+<tr class="odd">
+<td align="left">Strada Abatorului</td>
+<td align="left">Abatorului</td>
+</tr>
+<tr class="even">
+<td align="left">Strada Justiției</td>
+<td align="left">Justiției</td>
+</tr>
+<tr class="odd">
+<td align="left">Strada Ceferiștilor</td>
+<td align="left">Ceferiștilor</td>
+</tr>
+<tr class="even">
+<td align="left">Strada Fochiștilor</td>
+<td align="left">Fochiștilor</td>
+</tr>
+<tr class="odd">
+<td align="left">Strada Vasile Aaron</td>
+<td align="left">Vasile Aaron</td>
+</tr>
+<tr class="even">
+<td align="left">Șoseaua Alba Iulia</td>
+<td align="left">Alba Iulia</td>
+</tr>
+</tbody>
+</table>
+<p>Now we are ready to feed the street names to Wikidata and see if it can reliably determine to whom a given street or square is dedicated and their gender. The language parameter sets in which version of Wikidata the query is run, as results vary. Let’s try first with a single name, one that clearly looks like a name: Vasile Aaron.</p>
+<pre class="r"><code>tw_search(search = &quot;Vasile Aaron&quot;, language = &quot;ro&quot;) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">id</th>
+<th align="left">label</th>
+<th align="left">description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Q783587</td>
+<td align="left">Vasile Aaron</td>
+<td align="left">Romanian poet and author</td>
+</tr>
+</tbody>
+</table>
+<p>Judging by the description, that looks like the person someone in Romania would dedicate a street to.</p>
+<p>Now we would like to have some information about this person, e.g. date of birth and death, and, of course, gender.</p>
+<p>Thanks to the above query, we just found out that on Wikidata Vasile Aaron corresponds to “Q783587”. See his page on <a href="https://www.wikidata.org/wiki/Q783587">Wikidata</a> to get a glimpse of the kind of information available there. Each property has its code, so if we want to find out gender, we will have to ask for “P21”. Let’s give it a try:</p>
+<pre class="r"><code>tw_get_property(id = &quot;Q783587&quot;, p = &quot;P21&quot;) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">id</th>
+<th align="left">property</th>
+<th align="left">value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Q783587</td>
+<td align="left">P21</td>
+<td align="left">Q6581097</td>
+</tr>
+</tbody>
+</table>
+<p>Oh no, we get back another “Q” identifiers! We’ll need to get the label for this new code.</p>
+<pre class="r"><code>tw_get_property(id = &quot;Q783587&quot;, p = &quot;P21&quot;) %&gt;%
+  tw_get_label()</code></pre>
+<pre><code>## [1] &quot;Vasile Aaron&quot;</code></pre>
+<p>Now this makes sense: entity with id “Q783587” has the value “Q6581097” for property “P31” actually means “the gender of Vasile Aaron is male”.</p>
+<p>Let’s move on and make a nice little function to get some more details:</p>
+<pre class="r"><code>tw_get_bio &lt;- function(id) {
+  tibble::tibble(
+    label = tw_get_label(id = id),
+    description = tw_get_description(id = id),
+    gender = tw_get_property(id = id, p = &quot;P21&quot;) %&gt;%
+      dplyr::pull(value) %&gt;% 
+      tw_get_label(),
+    year_of_birth = tw_get_property(id = id, p = &quot;P569&quot;) %&gt;%
+      dplyr::pull(value) %&gt;%
+      lubridate::ymd_hms() %&gt;%
+      lubridate::year() %&gt;%
+      head(1) %&gt;%
+      as.character(),
+    year_of_death = tw_get_property(id = id, p = &quot;P570&quot;) %&gt;%
+      dplyr::pull(value) %&gt;%
+      lubridate::ymd_hms() %&gt;%
+      lubridate::year() %&gt;%
+      head(1) %&gt;%
+      as.character()
+  )
+}
+
+
+tw_get_bio(id = &quot;Q783587&quot;) %&gt;% knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">label</th>
+<th align="left">description</th>
+<th align="left">gender</th>
+<th align="left">year_of_birth</th>
+<th align="left">year_of_death</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Vasile Aaron</td>
+<td align="left">Romanian poet and author</td>
+<td align="left">male</td>
+<td align="left">1770</td>
+<td align="left">1822</td>
+</tr>
+</tbody>
+</table>
+<p>Nice! This mean that thanks to Wikidata we can get such nicely structured data for other folks who’ve been entitled a street. Let’s try with someone more famous, and get some more details such if they have a Wikipedia page, as well as a picture:</p>
+<pre class="r"><code>tw_get_bio &lt;- function(id) {
+  if (is.data.frame(id) == TRUE) {
+    id &lt;- id$id
+  }
+  gender_p &lt;- tw_get_property(id = id, p = &quot;P21&quot;) %&gt;%
+    dplyr::pull(value)
+  if (length(gender_p) == 0) {
+    gender &lt;- as.character(NA)
+  } else if (is.na(gender_p)) {
+    gender &lt;- as.character(NA)
+  } else {
+    gender &lt;- tw_get_label(gender_p)
+  }
+
+  year_of_birth &lt;- tw_get_property(id = id, p = &quot;P569&quot;) %&gt;%
+    dplyr::pull(value) %&gt;%
+    lubridate::ymd_hms() %&gt;%
+    lubridate::year() %&gt;%
+    head(1) %&gt;%
+    as.character()
+
+  if (length(year_of_birth) == 0) {
+    year_of_birth &lt;- as.character(NA)
+  }
+
+  year_of_death &lt;- tw_get_property(id = id, p = &quot;P570&quot;) %&gt;%
+    dplyr::pull(value) %&gt;%
+    lubridate::ymd_hms() %&gt;%
+    lubridate::year() %&gt;%
+    head(1) %&gt;%
+    as.character()
+
+  if (length(year_of_death) == 0) {
+    year_of_death &lt;- as.character(NA)
+  }
+
+
+  tibble::tibble(
+    id = id,
+    label = tw_get_label(id = id),
+    description = tw_get_description(id = id),
+    gender = gender,
+    year_of_birth = year_of_birth,
+    year_of_death = year_of_death,
+    picture = tw_get_image(id = id)[1],
+    wikipedia = tw_get_wikipedia(
+      id = id,
+      language = &quot;en&quot;
+    )
+  )
+}
+
+
+
+eminescu_tw &lt;- tw_search(&quot;Mihai Eminescu&quot;) %&gt;%
+  tw_filter_first(p = &quot;P31&quot;, q = &quot;Q5&quot;) %&gt;%
+  # tw_filter_first() instead of tw_filter() to get one result only
+  dplyr::pull(id) %&gt;%
+  tw_get_bio()
+
+eminescu_tw %&gt;%
+  tidyr::pivot_longer(
+    cols = dplyr::everything(),
+    names_to = &quot;property&quot;,
+    values_to = &quot;value&quot;
+  ) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">property</th>
+<th align="left">value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">id</td>
+<td align="left">Q184935</td>
+</tr>
+<tr class="even">
+<td align="left">label</td>
+<td align="left">Mihai Eminescu</td>
+</tr>
+<tr class="odd">
+<td align="left">description</td>
+<td align="left">Romanian poet, novelist and journalist (1850-1889)</td>
+</tr>
+<tr class="even">
+<td align="left">gender</td>
+<td align="left">male</td>
+</tr>
+<tr class="odd">
+<td align="left">year_of_birth</td>
+<td align="left">1850</td>
+</tr>
+<tr class="even">
+<td align="left">year_of_death</td>
+<td align="left">1889</td>
+</tr>
+<tr class="odd">
+<td align="left">picture</td>
+<td align="left">Eminescu.jpg</td>
+</tr>
+<tr class="even">
+<td align="left">wikipedia</td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Mihai" class="uri">https://en.wikipedia.org/wiki/Mihai</a> Eminescu</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>cat(&quot;![Eminescu himself](https://upload.wikimedia.org/wikipedia/commons/d/dc/Eminescu.jpg)&quot;)</code></pre>
+<div class="figure">
+<img src="https://upload.wikimedia.org/wikipedia/commons/d/dc/Eminescu.jpg" alt="" />
+<p class="caption">Eminescu himself</p>
+</div>
+<p>Now let’s replicate this for all the 642 unique street names found in Sibiu and see the result with a random sample of streets.</p>
+<pre class="r"><code># I&#39;ll still use the above-created tw_get_bio() for clarity,
+# but it would be more efficient to run tw_get with all ids,
+# and then filter results
+
+pb &lt;- progress::progress_bar$new(total = length(unique(city_street_names$name_clean)))
+
+streetnames_bio &lt;-
+  purrr::map_dfr(
+    .x = unique(city_street_names$name_clean),
+    .f = function(current_name) {
+      pb$tick()
+      search_result &lt;- tw_search(
+        search = current_name,
+        language = &quot;ro&quot;
+      ) %&gt;%
+        dplyr::filter(is.na(id) == FALSE) %&gt;%
+        tw_filter_first(p = &quot;P31&quot;, q = &quot;Q5&quot;)
+      # print(current_name)
+      # print(search_result$id)
+      if (nrow(search_result) == 0 | length(search_result) == 0) {
+        NULL
+      } else {
+        search_result %&gt;%
+          tw_get_bio() %&gt;%
+          dplyr::mutate(name_clean = current_name)
+      }
+    }
+  ) %&gt;%
+  dplyr::distinct()
+
+
+streetnames_bio %&gt;%
+  dplyr::slice_sample(n = 6) %&gt;%
+  dplyr::select(-name_clean) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="3%" />
+<col width="7%" />
+<col width="29%" />
+<col width="2%" />
+<col width="5%" />
+<col width="5%" />
+<col width="26%" />
+<col width="20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">id</th>
+<th align="left">label</th>
+<th align="left">description</th>
+<th align="left">gender</th>
+<th align="left">year_of_birth</th>
+<th align="left">year_of_death</th>
+<th align="left">picture</th>
+<th align="left">wikipedia</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Q731706</td>
+<td align="left">Dinicu Golescu</td>
+<td align="left">Romanian writer (1777-1830)</td>
+<td align="left">male</td>
+<td align="left">1777</td>
+<td align="left">1830</td>
+<td align="left">Dinicu Golescu.jpeg</td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Dinicu" class="uri">https://en.wikipedia.org/wiki/Dinicu</a> Golescu</td>
+</tr>
+<tr class="even">
+<td align="left">Q7281729</td>
+<td align="left">Radu Stanca</td>
+<td align="left">Romanian poet, playwright, theatre director, theatre critic and theoretician</td>
+<td align="left">male</td>
+<td align="left">1920</td>
+<td align="left">1962</td>
+<td align="left">Radu Stanca.jpg</td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Radu" class="uri">https://en.wikipedia.org/wiki/Radu</a> Stanca</td>
+</tr>
+<tr class="odd">
+<td align="left">Q57165</td>
+<td align="left">Ferdinand of Romania</td>
+<td align="left">King of Romania (1865-1927; ruled 1914-1927)</td>
+<td align="left">male</td>
+<td align="left">1865</td>
+<td align="left">1927</td>
+<td align="left">Ferdinand I, King of Romania, Prince of Hohenzollern-Sigmaringen.jpg</td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Ferdinand" class="uri">https://en.wikipedia.org/wiki/Ferdinand</a> I of Romania</td>
+</tr>
+<tr class="even">
+<td align="left">Q961107</td>
+<td align="left">Ioan Slavici</td>
+<td align="left">Romanian writer</td>
+<td align="left">male</td>
+<td align="left">1848</td>
+<td align="left">1925</td>
+<td align="left">Ioan Slavici.jpg</td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Ioan" class="uri">https://en.wikipedia.org/wiki/Ioan</a> Slavici</td>
+</tr>
+<tr class="odd">
+<td align="left">Q22670</td>
+<td align="left">Friedrich Schiller</td>
+<td align="left">German poet, philosopher, historian, and playwright</td>
+<td align="left">male</td>
+<td align="left">1759</td>
+<td align="left">1805</td>
+<td align="left">Friedrich Schiller by Ludovike Simanowiz.jpg</td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Friedrich" class="uri">https://en.wikipedia.org/wiki/Friedrich</a> Schiller</td>
+</tr>
+<tr class="even">
+<td align="left">Q12730934</td>
+<td align="left">Ion Pop-Reteganul</td>
+<td align="left">Romanian writer</td>
+<td align="left">male</td>
+<td align="left">1853</td>
+<td align="left">1905</td>
+<td align="left">Ion Pop-Reteganul.jpg</td>
+<td align="left">NA</td>
+</tr>
+</tbody>
+</table>
+<p>For a completely automatic method that can easily be run on thousands of streets the above is not too bad, but it still contains a fair share of errors. My favourite is “Strada teilor” - “Linden street” (in <a href="https://en.wikipedia.org/wiki/Tilia">reference to trees</a>), being understood as “Taylor Swift street”. Bizzarre? Certainly, but also helpful as a reminder of how this all works: the search matches also common ways English terms would be misspelled. “Teilor”, the genitive plural of “Tei”, linden, may be how one would write “Taylor” if they had no clue about how English is written.</p>
+</div>
+<div id="step-3-manually-fixing-whats-not-right" class="section level2">
+<h2>Step 3: Manually fixing what’s not right</h2>
+<p>If we look at the result, the vast majority of matches are correct.</p>
+<p>Some results may be missing because they actually don’t exist on Wikidata. Other, because the search string for some reason did not work.</p>
+<p>Either way, there is likely some manual work to do to get this right.</p>
+<p>In the old package <code>genderedstreetnames</code>, I had a very basic interface that made it super-quick to check the output and fix the gender column.</p>
+<p><img src="img/fix_street_names_screenshot_gsn.png" /></p>
+<p>Things get more complicated if we want to facilitate matching with Wikidata ids. This is the interface we used to manually check matches for the pilot of <a href="https://mappingdiversity.eu/">Mapping diversity</a>:</p>
+<p><img src="img/fix_street_names_beta.png" /></p>
+<p>In most cases, it’s sufficient to just keep on clicking on “next”, until a mismatch is found. Then it’s possible to search Wikidata from within the interface and assign the id to the given street name. A more flexible version of this interface will be made publicly available in the coming months.</p>
+<p>In the meantime, let’s proceed with the manually fixed results.</p>
+<pre class="r"><code>city_streets_bio_sf &lt;-
+  city_streets %&gt;%
+  dplyr::left_join(
+    y = city_street_names %&gt;%
+      dplyr::left_join(y = streetnames_bio, by = &quot;name_clean&quot;),
+    by = &quot;name&quot;
+  )
+
+city_streets_bio_sf %&gt;%
+  sf::st_drop_geometry() %&gt;%
+  dplyr::select(name_clean, id, label, description) %&gt;%
+  distinct(name_clean, .keep_all = TRUE) %&gt;%
+  readr::write_csv(file = &quot;city_street_names_pre_check.csv&quot;)
+
+
+## actually fix results and store them in &quot;city_street_names_post_check.csv&quot;
+## just fix the id column with the correct wikidata id
+## or set it to NA if none should apply
+
+if (fs::file_exists(&quot;city_street_names_post_check.csv&quot;)) {
+  fixed_city_street_names &lt;- readr::read_csv(
+    file = &quot;city_street_names_post_check.csv&quot;,
+    col_types = readr::cols(
+      name_clean = readr::col_character(),
+      id = readr::col_character(),
+      label = readr::col_character(),
+      description = readr::col_character()
+    )
+  ) %&gt;%
+    dplyr::select(name_clean, id) %&gt;%
+    dplyr::filter(is.na(id) == FALSE)
+
+  pb &lt;- progress::progress_bar$new(total = length(fixed_city_street_names$id))
+
+  streetnames_bio_fixed &lt;-
+    purrr::map_dfr(
+      .x = seq_along(fixed_city_street_names$id),
+      .f = function(x) {
+        pb$tick()
+        fixed_city_street_names$id[x] %&gt;%
+          tw_get_bio() %&gt;%
+          dplyr::mutate(name_clean = fixed_city_street_names$name_clean[x])
+      }
+    ) %&gt;%
+    dplyr::distinct()
+
+  city_streets_bio_sf &lt;-
+    city_streets %&gt;%
+    dplyr::left_join(
+      y = city_street_names %&gt;%
+        dplyr::left_join(
+          y = streetnames_bio_fixed,
+          by = &quot;name_clean&quot;
+        ),
+      by = &quot;name&quot;
+    )
+}</code></pre>
+<p>So here’s the tally of streets dedicated to men and women after making sure Wikidata identifiers actually match the street name.</p>
+<pre class="r"><code>city_streets_bio_sf %&gt;%
+  sf::st_drop_geometry() %&gt;%
+  distinct(name, .keep_all = TRUE) %&gt;%
+  count(gender) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">gender</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">female</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">male</td>
+<td align="right">183</td>
+</tr>
+<tr class="odd">
+<td align="left">NA</td>
+<td align="right">477</td>
+</tr>
+</tbody>
+</table>
+<p>And here’s a full list of all streets dedicated to women in Sibiu:</p>
+<pre class="r"><code>city_streets_bio_sf %&gt;%
+  sf::st_drop_geometry() %&gt;%
+  distinct(name, .keep_all = TRUE) %&gt;%
+  dplyr::filter(gender == &quot;female&quot;) %&gt;%
+  dplyr::select(name, id, label, description) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="8%" />
+<col width="16%" />
+<col width="54%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">name</th>
+<th align="left">id</th>
+<th align="left">label</th>
+<th align="left">description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Strada Ana Ipătescu</td>
+<td align="left">Q12720571</td>
+<td align="left">Ana Ipătescu</td>
+<td align="left">Participant in the Romanian Revolution of 1848</td>
+</tr>
+<tr class="even">
+<td align="left">Strada Ecaterina Teodoroiu</td>
+<td align="left">Q5332155</td>
+<td align="left">Ecaterina Teodoroiu</td>
+<td align="left">Romanian female soldier in World War I</td>
+</tr>
+<tr class="odd">
+<td align="left">Strada Ecaterina Varga</td>
+<td align="left">Q580935</td>
+<td align="left">Katalin Varga</td>
+<td align="left">Hungarian noblewoman and leader of a Transylvanian miners’ movement</td>
+</tr>
+<tr class="even">
+<td align="left">Strada Elena Cuza Doamna</td>
+<td align="left">Q4975558</td>
+<td align="left">Elena Cuza</td>
+<td align="left">Romanian noble and philanthropist</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-4-visualise-the-result-on-a-map" class="section level2">
+<h2>Step 4: visualise the result on a map</h2>
+<p>Here’s a map of Sibiu showing the gender distribution of people of who have been dedicated streets.</p>
+<pre class="r"><code>ggplot2::ggplot() +
+  geom_sf(data = city_boundaries) +
+  geom_sf(
+    data = city_streets_bio_sf %&gt;%
+      filter(is.na(gender)),
+    size = 0.2, colour = &quot;grey&quot;
+  ) +
+  geom_sf(
+    data = city_streets_bio_sf %&gt;%
+      filter(is.na(gender) == FALSE),
+    size = 0.5,
+    mapping = ggplot2::aes(colour = gender)
+  ) +
+  # scale_color_brewer(type = &quot;div&quot;,
+  #                    palette = &quot;Set1&quot;,
+  #                    na.value = &quot;grey&quot;) +
+  scale_color_manual(values = c(&quot;#a6ce39&quot;, &quot;#6f2c91&quot;),
+                     na.value = &quot;grey&quot;) +
+  theme_void() +
+  theme(legend.title = element_blank())</code></pre>
+<p><img src="staticunnamed-chunk-20-1.png" width="672" /></p>
+<p>We can of course colour-code by some other feature, such as year of birth:</p>
+<pre class="r"><code>city_streets_bio_birth_sf &lt;-
+  city_streets_bio_sf %&gt;%
+  dplyr::mutate(year_of_birth = as.numeric(year_of_birth)) %&gt;%
+  dplyr::mutate(
+    birth =
+      dplyr::case_when(
+        year_of_birth &gt; 1900 ~ &quot;20th century&quot;,
+        year_of_birth &gt; 1800 ~ &quot;19th century&quot;,
+        year_of_birth &gt; 1700 ~ &quot;18th century&quot;,
+        is.na(year_of_birth) == FALSE ~ &quot;earlier&quot;,
+        TRUE ~ as.character(NA)
+      )
+  ) %&gt;%
+  dplyr::mutate(birth = factor(birth, levels = c(
+    as.character(NA),
+    &quot;earlier&quot;,
+    &quot;18th century&quot;,
+    &quot;19th century&quot;,
+    &quot;20th century&quot;
+  )))</code></pre>
+<pre class="r"><code>ggplot2::ggplot() +
+  geom_sf(data = city_boundaries) +
+  geom_sf(data = city_streets_bio_birth_sf %&gt;%
+    filter(is.na(birth) == TRUE), colour = &quot;grey&quot;, alpha = 0.7, size = 0.2) +
+  geom_sf(
+    data = city_streets_bio_birth_sf %&gt;%
+      filter(is.na(birth) == FALSE),
+    size = 0.3,
+    mapping = ggplot2::aes(colour = birth)
+  ) +
+  scale_color_viridis_d() +
+  theme_void() +
+  theme(legend.title = element_blank())</code></pre>
+<p><img src="staticunnamed-chunk-22-1.png" width="672" /></p>
+<p>It appears that a lot of streets are dedicated to 19th century figures.</p>
+<pre class="r"><code>city_streets_bio_birth_sf %&gt;%
+  sf::st_drop_geometry() %&gt;%
+  distinct(name, .keep_all = TRUE) %&gt;%
+  count(birth) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">birth</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">earlier</td>
+<td align="right">21</td>
+</tr>
+<tr class="even">
+<td align="left">18th century</td>
+<td align="right">21</td>
+</tr>
+<tr class="odd">
+<td align="left">19th century</td>
+<td align="right">114</td>
+</tr>
+<tr class="even">
+<td align="left">20th century</td>
+<td align="right">13</td>
+</tr>
+<tr class="odd">
+<td align="left">NA</td>
+<td align="right">495</td>
+</tr>
+</tbody>
+</table>
+<p>It is worth highlighting that this outlook has changed many times… Until the first world war, Sibiu was part of the Habsburg empire; it then became part of independent Romania, but in the <a href="https://en.wikipedia.org/wiki/Sibiu#Demographics">early 1930s</a> local Germans (<a href="https://en.wikipedia.org/wiki/Transylvanian_Saxons">Transylvanian Saxons</a>) still outnumbered Romanians (<a href="https://testzone.giorgiocomai.eu/sibiu1934/">see a map of the time</a>). Toponomastics changed again under the years of the “people’s” (and then “socialist”) republic, to be changed again after 1989.</p>
+<pre class="r"><code>tmap::tmap_mode(mode = &quot;plot&quot;)
+
+city_map &lt;- tmap::tm_shape(city_boundaries) +
+  tmap::tm_polygons() +
+  tmap::tm_shape(city_streets_bio_sf) +
+  tmap::tm_lines(col = &quot;gender&quot;, palette = &quot;Set1&quot;, textNA = &quot;other&quot;)
+
+city_map
+# tmap::tmap_save(city_map, &quot;gendered_street_city.png&quot;)</code></pre>
+<p>Let’s have a closer look with an interactive version of this map. Click on the streets to see more details in the popup.</p>
+<pre class="r"><code>tmap::tmap_mode(&quot;view&quot;)
+
+interactive_tmap &lt;- tmap::tm_shape(city_boundaries, name = &quot;Administrative boundary&quot;) +
+  tmap::tm_fill(
+    col = &quot;lightblue&quot;,
+    alpha = 0.2,
+    popup.vars = FALSE,
+    legend.show = FALSE,
+    interactive = FALSE
+  ) +
+  # tmap::tm_shape(city_streets_bio_sf %&gt;%
+  #   dplyr::filter(is.na(gender) == TRUE),
+  # name = &quot;Streets not dedicated to persons&quot;
+  # ) +
+  # tmap::tm_lines(
+  #   interactive = FALSE,
+  #   legend.show = FALSE,
+  #   alpha = 0.2,
+  #   colorNA = &quot;grey30&quot;
+  # ) +
+  tmap::tm_shape(city_streets_bio_sf %&gt;%
+    dplyr::filter(is.na(gender) == FALSE),
+  name = &quot;Streets dedicated to persons&quot;
+  ) +
+  tmap::tm_lines(
+    col = &quot;gender&quot;,
+    lwd = 3,
+    palette = c(&quot;#a6ce39&quot;, &quot;#6f2c91&quot;),
+    textNA = &quot;other&quot;,
+    id = &quot;name&quot;,
+    popup.vars = c(
+      &quot;gender&quot;,
+      &quot;description&quot;,
+      &quot;year_of_birth&quot;,
+      &quot;year_of_death&quot;,
+      &quot;wikipedia&quot;
+    )
+  )
+
+tmap_save(tm = interactive_tmap, filename = &quot;interactive_tmap.html&quot;)</code></pre>
+<iframe src="interactive_tmap.html" data-external="1" height="405" width="720">
+</iframe>
+<p>And… that’s a wrap for today. Hopefully all of the above will provide a better understanding of how we have collected and verified data for the pilot of <a href="https://mappingdiversity.eu/">Mapping diversity</a>. In the coming months we will publicly release the above-mentioned interface to facilitate Wikidata matching, as well as provide an easy way to share the resulting datasets. Stay tuned!</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>See for example the R package <code>gender</code> - <a href="https://github.com/ropensci/gender" class="uri">https://github.com/ropensci/gender</a> - for an approach based on historical data. See also the Python package <code>SexMachine</code> - <a href="https://pypi.org/project/SexMachine/" class="uri">https://pypi.org/project/SexMachine/</a> - which is also based on a database of names<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>

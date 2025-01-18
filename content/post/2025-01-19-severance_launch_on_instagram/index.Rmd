@@ -1,6 +1,6 @@
 ---
 title: 'Explore the Instagram API based on the cast of "Severance"'
-date: '2025-01-19'
+date: '2025-01-18'
 categories:
   - Data notes
 tags:

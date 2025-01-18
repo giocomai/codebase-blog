@@ -1,0 +1,70 @@
+---
+title: Italian-provinces-themed juice caps - an exploration
+author: Giorgio Comai
+date: '2024-09-16'
+categories:
+  - Data notes
+tags:
+  - dataviz
+  - maps
+  - rstats
+---
+
+
+
+<p>Following this post, you will find out how to:</p>
+<ul>
+<li>match province identifiers to a map (easy!)</li>
+<li>make a palette based on the prevalent colour of a set of images (easier than I thought)</li>
+<li>place a set of png images on a ggplot canvas (the trick part is adapting size to the number of caps)</li>
+<li>place png images on an interactive <code>leaflet</code> map (always fancy)</li>
+<li>estimate how many bottles of juice you’re supposed to drink in order to finish your collection (serious questions)</li>
+<li>build a <code>wasm</code>-based, server-less shiny app with all of the above (so much wisdom can’t be accessible only to those who code)</li>
+</ul>
+<hr />
+<p>In May 2024, Italian brand “Yoga” has started to place on caps of its small glass bottles of fruit juice a set of decorations themed after Italian cities (<a href="https://www.succhiyoga.it/collezione-tappi-succhi-yoga-tutte-mie-le-citta/">“Tutte le mie città”</a>). The full set includes 107 different caps, one for each Italian province.</p>
+<div class="float">
+<img src="img/IMG-BLOG_Tutte-mie-le-citta-1.png" alt="Picture from Yoga’s website" />
+<div class="figcaption"><em>Picture from Yoga’s website</em></div>
+</div>
+<p>The design is quite nice, and for someone with kids, a good occasion to get to know better Italy’s geography, including the location of somewhat smaller - or just distant - cities. How is the geographic coverage of our collection going? At the same time, it’s also an obvious occasion to talk about statistics: how many fruit juice bottles will we have to drink in order to have a full set, considering that bottles are sold in cartons of 6, each with random caps?</p>
+<p>As you see, big questions.</p>
+<p>So, if you will indulge me…</p>
+<div id="which-parts-of-italy-does-our-collection-cover" class="section level2">
+<h2>Which parts of Italy does our collection cover?</h2>
+<p>Frmo the very beginning, things bode well. Each cap has the name of the pronvicial capital(s) and a number, from 1 to 107. The numbering does not correspond to the one used by the Italian statistical office, but places cities in alphabetical order, so it’s an easy fix.</p>
+<p>We can take the official dataset with administrative boundaries <a href="https://www.istat.it/notizia/confini-delle-unita-amministrative-a-fini-statistici-al-1-gennaio-2018-2/">from ISTAT’s website</a>, distributed with a <a href="https://creativecommons.org/licenses/by/4.0/deed.en">CC-BY license</a>, and we’re immediately ready to match caps to administrative boundaries.</p>
+<p>Let’s take a random sample of six caps, and place them on a map, adding the respective label:</p>
+<p><img src="staticbasic%20aquamarine%20map%20selected-1.png" width="672" />
+With labels… nice and easy! If we had all provinces we’d probably need to include only the province id and not the name, or just fill the area without code, but there’s not much we can do about it</p>
+<p>There is however, something that is deeply unsatisfying: the fill colour of the provinces.</p>
+<p>And the good thing is, there is a satisfying answer to this question: each of the caps has one of small sets of background colours… overall, a nice palette. Shouldn’t all provinces take the colour from the respective cap? Of course they should!</p>
+</div>
+<div id="getting-the-background-colour-of-each-cap" class="section level2">
+<h2>Getting the background colour of each cap</h2>
+<p>Manually retrieving the backgroun colour of 107 caps would be more than these typing-loving hands would be willing to accept, so, an alternative solution must be found.</p>
+<p>And indeed, we are in good luck: the website of the initiative hosts not one, but two full sets of of images of caps! Even better, they are hosted with predictable names:</p>
+<ul>
+<li>higher resolution 3d render of caps (see e.g. <a href="https://www.succhiyoga.it/wp-content/themes/timber-starter-theme/static/special/citta/images/tappi-big/1.png">cap 1</a>, and adjust the filename to see the following)</li>
+<li>lower resolution 2d render of caps (see e.g. <a href="https://www.succhiyoga.it/wp-content/themes/timber-starter-theme/static/special/citta/images/tappi/1.png">cap 1</a>, and adjust the filename to see the following)</li>
+</ul>
+<p>Let’s retrieve them all, as we’ll need them for reference.</p>
+<p>And let’s have a look at the above-selected random set of caps, first in the basic version:</p>
+<p><img src="statictest_set%20png_small-1.png" width="672" />
+then in the high resolution one:</p>
+<p><img src="statictest_set%20png_big-1.png" width="672" /></p>
+<p>These are really very nicely designed!</p>
+<p>Anyway… here’s what we have achieved so far. Based on a set of cap identifiers, we can:</p>
+<ul>
+<li>create a map and show the provinces corresponding to the selected caps</li>
+<li>preview the caps themselves as a picture</li>
+</ul>
+<p>The next task of the masterplan is to identify the background colour of each cap, in order to use it when showing selected provinces on the map.</p>
+<p>[TO DO: post in progress - I’ve actually done most of the coding for everything announced on top of the post, I just need the time to write up the accompanying text]</p>
+<hr />
+<p>P.S. if you’re reading this from Italy, and you have some active memories from the last century… you may remember how another established fruit juice company used to run a somewhat similar campaign: caps with country flags. Let me unlock this memory for you, with this <a href="https://www.ebay.it/itm/186188673705">picture from ebay</a>.</p>
+<div class="float">
+<img src="img/s-l1600.webp" style="width:100.0%" alt="Picture from Ebay/galactic.poacher" />
+<div class="figcaption"><em>Picture from Ebay/galactic.poacher</em></div>
+</div>
+</div>

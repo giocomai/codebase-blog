@@ -1,0 +1,766 @@
+---
+title: 'Explore the Instagram API based on the cast of "Severance"'
+date: '2025-01-19'
+categories:
+  - Data notes
+tags:
+  - dataviz
+  - instagram
+---
+
+
+
+<div id="a-preliminary-note" class="section level2">
+<h2>A preliminary note</h2>
+<p>This post largely relies on package for the R programming language I’ve been working on, that is still under development. Its name is <a href="https://giocomai.github.io/cornucopia/"><code>cornucopia</code></a>. Why call it cornucopia? It’s a tongue in cheek reference to marketers always thinking about conversion funnels: ultimately, a cornucopia is like a funnel that keeps on giving. Also known as the “horn of plenty”, it’s basically a marketer’s wildest dream: a funnel that endlessly overflows with abundance.</p>
+<p>More seriously: the package is <a href="https://giocomai.github.io/cornucopia/">available on GitHub</a> and I’ve put some efforts in documenting it. Many functions can be used and are effectively being used, but overall given then breadth of the Meta API it remains very much a work in progress: only some use cases are covered; are not yet adequately documented; only some functions have effectively integrated efficient caching. But if you’re approaching the Meta/Facebook/Instagram graph API for the first time, I’ll say that overcoming the Byzantine system required to get an app up and running and then retrieving appropriately- scoped tokens will probably be more of a challenge than incomplete documentation in <code>cornucopia</code>. You have been warned. In due time, documentation will get better, I may get to write a few tutorials, and who knows, perhaps even make the app public. Until then… just enjoy this light-hearted post showcasing the <code>business discovery</code> Instagram API.</p>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+# if not available, install `cornucopia` with pak::pak(&quot;giocomai/cornucopia&quot;)
+# the package is still experimental and not fully-featured or documented, yet
+library(&quot;cornucopia&quot;)
+
+start_date &lt;- &quot;2025-01-01&quot;
+end_date &lt;- &quot;2025-01-18&quot;
+
+# this is how I protect tokens for this session, adapt this as needed
+keyring::keyring_unlock(password = readr::read_lines(&quot;key.txt&quot;), keyring = &quot;codebase&quot;)
+
+cc_set(
+  start_date = start_date,
+  end_date = end_date,
+  ig_user_id = keyring::key_get(service = &quot;ig_user_id&quot;, username = &quot;cornucopiar&quot;, keyring = &quot;codebase&quot;),
+  fb_user_token = keyring::key_get(service = &quot;fb_long_user_token&quot;, username = &quot;giocomai&quot;, keyring = &quot;codebase&quot;),
+  fb_user_id = keyring::key_get(service = &quot;fb_user_id&quot;, username = &quot;giocomai&quot;, keyring = &quot;codebase&quot;)
+)
+
+library(&quot;dplyr&quot;)
+library(&quot;ggplot2&quot;)
+# pak::pak(&quot;ivelasq/severance&quot;)
+library(&quot;severance&quot;)
+
+theme_set(theme_minimal(base_family = &quot;Roboto Condensed&quot;))</code></pre>
+</div>
+<div id="step-1-retrieve-the-instagram-handles-of-severance-actors" class="section level2">
+<h2>Step 1: Retrieve the Instagram handles of <em>Severance</em> actors</h2>
+<p>First, we need to retrieve the Instagram handles of <em>Severance</em> actors. Rather than add them manually, we’ll query Wikidata via Wikipedia. Why? Because if you want to repeat this post with a different TV series or film the only thing you’ll need to do is to change the URL to the Wikipedia page in the following code chunk or the <a href="https://github.com/giocomai/codebase-blog/tree/master/content/post/2025-01-19-severance_launch_on_instagram/">version of this post including code chunks</a>, and all the rest will follow automagically.</p>
+<pre class="r"><code>library(&quot;tidywikidatar&quot;)
+tw_create_cache_folder(ask = FALSE)
+tw_enable_cache()
+
+actors_ig_df &lt;- tw_get_wikipedia_page_qid(url = &quot;https://en.wikipedia.org/wiki/Severance_(TV_series)&quot;) |&gt; 
+  dplyr::pull(qid) |&gt; 
+  tw_get_property(p = &quot;P161&quot;) |&gt; 
+  dplyr::transmute(actor_qid = value) |&gt; 
+  dplyr::mutate(actor_name = tw_get_label(actor_qid)) |&gt; 
+  dplyr::mutate(ig_username = tw_get_p1(actor_qid, p = &quot;P2003&quot;))
+
+knitr::kable(
+  actors_ig_df |&gt; 
+    dplyr::select(-actor_qid) |&gt; 
+    dplyr::mutate(ig_username = purrr::map_chr(
+      .x = ig_username, .f = \(x) {
+        if (is.na(x)) {
+          &quot;/&quot;
+        } else {
+          htmltools::a(x, href = stringr::str_c(&quot;https://www.instagram.com/&quot;, x, &quot;/&quot;)) |&gt; as.character()
+        }
+      })), escape = FALSE)</code></pre>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="79%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">actor_name</th>
+<th align="left">ig_username</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Adam Scott</td>
+<td align="left"><a href="https://www.instagram.com/mradamscott/">mradamscott</a></td>
+</tr>
+<tr class="even">
+<td align="left">Britt Lower</td>
+<td align="left"><a href="https://www.instagram.com/brittle/">brittle</a></td>
+</tr>
+<tr class="odd">
+<td align="left">John Turturro</td>
+<td align="left"><a href="https://www.instagram.com/john_turturro/">john_turturro</a></td>
+</tr>
+<tr class="even">
+<td align="left">Christopher Walken</td>
+<td align="left">/</td>
+</tr>
+<tr class="odd">
+<td align="left">Patricia Arquette</td>
+<td align="left"><a href="https://www.instagram.com/patriciaarquette/">patriciaarquette</a></td>
+</tr>
+<tr class="even">
+<td align="left">Jen Tullock</td>
+<td align="left"><a href="https://www.instagram.com/surefineokay/">surefineokay</a></td>
+</tr>
+<tr class="odd">
+<td align="left">Zach Cherry</td>
+<td align="left">/</td>
+</tr>
+<tr class="even">
+<td align="left">Yul Vazquez</td>
+<td align="left"><a href="https://www.instagram.com/yuluminati/">yuluminati</a></td>
+</tr>
+<tr class="odd">
+<td align="left">Dichen Lachman</td>
+<td align="left"><a href="https://www.instagram.com/dichenlachman/">dichenlachman</a></td>
+</tr>
+<tr class="even">
+<td align="left">Michael Chernus</td>
+<td align="left"><a href="https://www.instagram.com/mchernus/">mchernus</a></td>
+</tr>
+<tr class="odd">
+<td align="left">Tramell Tillman</td>
+<td align="left"><a href="https://www.instagram.com/tramell.tillman/">tramell.tillman</a></td>
+</tr>
+</tbody>
+</table>
+<p>Alright, not all of the cast has an Instagram account, but most do. Let’s proceed and check some info about their Instagram accounts.</p>
+<pre class="r"><code>actors_ig_no_na_df &lt;- actors_ig_df |&gt; 
+  tidyr::drop_na(ig_username)</code></pre>
+</div>
+<div id="step-2-check-out-how-many-followers-they-have" class="section level2">
+<h2>Step 2: Check out how many followers they have</h2>
+<p>In order to proceed, we’ll rely on the <a href="https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/business_discovery/">“business discovery” feature</a> of the official Instagram API. To do so, you’ll need to have a business Instagram account associated with a Facebook page and get an appropriately scoped token: getting this right is a bit of a pain at first, but <a href="https://giocomai.github.io/cornucopia/#meta--facebook--instagram">follow along this documentation</a> and you’ll eventually get there. Notice that for this endeavour you’ll only need a <code>fb_user_token</code> (not the page token) and an <code>ig_user_id</code> (you’ll need to retrieve it through the API, is not the old Instagram id).</p>
+<pre class="r"><code>if (fs::file_exists(&quot;cast_ig_df.csv&quot;)==FALSE) {
+  # cornucopia will eventually take care of the caching itself, but for the time being, we&#39;ll handle this manually
+  # also: we want to cache the data at the moment this post is written
+  cast_ig_df &lt;- cc_get_instagram_bd_user(ig_username = actors_ig_no_na_df$ig_username) |&gt; 
+    dplyr::select(-id)
+  readr::write_csv(x = cast_ig_df, file = &quot;cast_ig_df.csv&quot;)
+}
+
+cast_ig_df &lt;- readr::read_csv(&quot;cast_ig_df.csv&quot;, show_col_types = FALSE, progress = FALSE)</code></pre>
+<p>Let’s see some basic stats about their Instagram accounts:</p>
+<pre class="r"><code>cast_ig_df |&gt; 
+  dplyr::select(username, name, followers_count, follows_count, media_count) |&gt; 
+  dplyr::mutate(username = purrr::map_chr(
+    .x = username, .f = \(x) {
+      htmltools::a(x, href = stringr::str_c(&quot;https://www.instagram.com/&quot;, x, &quot;/&quot;)) |&gt; as.character()
+    })) |&gt; 
+  dplyr::arrange(dplyr::desc(followers_count)) |&gt; 
+  knitr::kable(escape = FALSE, format.args = list(big.mark = &quot; &quot;))</code></pre>
+<table>
+<colgroup>
+<col width="55%" />
+<col width="13%" />
+<col width="11%" />
+<col width="10%" />
+<col width="8%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">username</th>
+<th align="left">name</th>
+<th align="right">followers_count</th>
+<th align="right">follows_count</th>
+<th align="right">media_count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/mradamscott/">mradamscott</a></td>
+<td align="left">Adam Scott</td>
+<td align="right">1 024 036</td>
+<td align="right">1 302</td>
+<td align="right">506</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/patriciaarquette/">patriciaarquette</a></td>
+<td align="left">Patricia Arquette</td>
+<td align="right">214 228</td>
+<td align="right">7 499</td>
+<td align="right">50</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/dichenlachman/">dichenlachman</a></td>
+<td align="left">Dichen Lachman</td>
+<td align="right">159 656</td>
+<td align="right">673</td>
+<td align="right">194</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/brittle/">brittle</a></td>
+<td align="left">britt lower</td>
+<td align="right">89 714</td>
+<td align="right">742</td>
+<td align="right">180</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/john_turturro/">john_turturro</a></td>
+<td align="left">John Turturro</td>
+<td align="right">20 241</td>
+<td align="right">92</td>
+<td align="right">86</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/tramell.tillman/">tramell.tillman</a></td>
+<td align="left">Tramell Tillman</td>
+<td align="right">19 741</td>
+<td align="right">1 376</td>
+<td align="right">49</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/surefineokay/">surefineokay</a></td>
+<td align="left">Jen Tullock</td>
+<td align="right">15 532</td>
+<td align="right">2 757</td>
+<td align="right">4 498</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/yuluminati/">yuluminati</a></td>
+<td align="left">YUL VAZQUEZ</td>
+<td align="right">13 654</td>
+<td align="right">4 555</td>
+<td align="right">3 649</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/mchernus/">mchernus</a></td>
+<td align="left">Michael Chernus</td>
+<td align="right">12 328</td>
+<td align="right">3 226</td>
+<td align="right">507</td>
+</tr>
+</tbody>
+</table>
+<p>Not bad, Adam Scott, with over 1 million followers, not bad. Some of them post very occasionally, judging by the total number of posts.</p>
+<pre class="r"><code>instagram_followers_gg &lt;- cast_ig_df |&gt; 
+  dplyr::select(username, name, followers_count) |&gt; 
+  dplyr::arrange(followers_count) |&gt; 
+  dplyr::mutate(name = forcats::fct_inorder(name)) |&gt; 
+  ggplot() +
+  geom_col(mapping = aes(x = followers_count,
+                         y = name,
+                         fill = username)) +
+  scale_fill_manual(values = c(severance_palette(&quot;Dinner&quot;), severance_palette(&quot;Hell&quot;))) +
+  scale_x_continuous(name = &quot;Number of Instagram followers&quot;,
+                     labels = scales::number) +
+  scale_y_discrete(name = NULL) +
+  labs(title = paste(sQuote(&quot;Severance&quot;), &quot;cast by number of followers on Instagram&quot;),
+       caption = &quot;* As of January 2025&quot;) +
+  theme(legend.position = &quot;none&quot;)
+
+ggplot2::ggsave(filename = &quot;instagram_followers_gg.png&quot;,
+                plot = instagram_followers_gg,
+                width = 8,
+                height = 6,
+                bg = &quot;white&quot;)</code></pre>
+<p><img src="instagram_followers_gg.png" style="width:100.0%" /></p>
+<p>Time to see what they post.</p>
+</div>
+<div id="step-3-retrieve-their-posts" class="section level2">
+<h2>Step 3: Retrieve their posts</h2>
+<p>Instagram has set a rather heavy throttling of this API endpoint to prevent scraping, so we’ll just retrieve the latest 100 post of each actor. Ultimately, API limits are reset after 1 hour, so adding some waiting time this can be scaled up to a reasonable extent for many use cases.</p>
+<pre class="r"><code># manual caching, as long as I don&#39;t integrate proper caching in the core functions
+base_media_folder &lt;- fs::dir_create(&quot;ig_media&quot;)
+
+media_df &lt;- purrr::map(
+  .x = cast_ig_df$username,
+  .f = \(current_username) {
+    current_filename &lt;- fs::path(base_media_folder, fs::path_ext_set(path = current_username,
+                                                                     ext = &quot;csv&quot;) |&gt; 
+                                   fs::path_sanitize())
+    if (fs::file_exists(current_filename)==FALSE) {
+      current_media_df &lt;- cc_get_instagram_bd_user_media(
+        ig_username = current_username,
+        max_pages = 4 # 4 pages, as each page has 25 posts
+      )
+      # dropping thumbnail and media url, as they are attached to my user and anyway stop working soon
+      readr::write_csv(x = current_media_df |&gt; 
+                         dplyr::select(-thumbnail_url, -media_url),
+                       file = current_filename)
+    }
+    current_media_df &lt;- readr::read_csv(current_filename, show_col_types = FALSE, progress = FALSE)
+    current_media_df
+  }
+) |&gt; 
+  purrr::list_rbind()</code></pre>
+</div>
+<div id="step-4-check-out-what-they-post" class="section level2">
+<h2>Step 4: check out what they post</h2>
+<p>So here we are, with about 100 posts per user, or much less for those who post infrequently. As you see, retrieving 100 posts lets us go back in time just a couple of months for a couple of users, but all the way back to 2015 for others!</p>
+<pre class="r"><code>usernames_ordered_df &lt;- cast_ig_df |&gt; 
+  dplyr::select(username)
+
+usernames_ordered_df |&gt; 
+  dplyr::left_join(
+    media_df |&gt; 
+      dplyr::group_by(username) |&gt; 
+      dplyr::count(name = &quot;post&quot;),
+    by = &quot;username&quot;) |&gt;
+  dplyr::left_join(y = media_df |&gt; 
+                     dplyr::group_by(username) |&gt; 
+                     dplyr::summarise(earliest_post  = min(timestamp) |&gt; as.Date(),
+                                      latest_post = max(timestamp) |&gt; as.Date()),
+                   by = &quot;username&quot;) |&gt; 
+  dplyr::left_join(y = media_df |&gt; 
+                     dplyr::group_by(username, media_type) |&gt; 
+                     dplyr::count() |&gt; 
+                     tidyr::pivot_wider(names_from = media_type, values_from = n), 
+                   by = &quot;username&quot;) |&gt; 
+  dplyr::left_join(y = media_df |&gt; 
+                     dplyr::group_by(username, media_product_type) |&gt; 
+                     dplyr::count() |&gt; 
+                     tidyr::pivot_wider(names_from = media_product_type, values_from = n), 
+                   by = &quot;username&quot;) |&gt; 
+  
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="19%" />
+<col width="5%" />
+<col width="16%" />
+<col width="13%" />
+<col width="17%" />
+<col width="6%" />
+<col width="6%" />
+<col width="5%" />
+<col width="6%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">username</th>
+<th align="right">post</th>
+<th align="left">earliest_post</th>
+<th align="left">latest_post</th>
+<th align="right">CAROUSEL_ALBUM</th>
+<th align="right">IMAGE</th>
+<th align="right">VIDEO</th>
+<th align="right">FEED</th>
+<th align="right">REELS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">mradamscott</td>
+<td align="right">100</td>
+<td align="left">2022-07-02</td>
+<td align="left">2025-01-14</td>
+<td align="right">51</td>
+<td align="right">42</td>
+<td align="right">7</td>
+<td align="right">93</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">brittle</td>
+<td align="right">100</td>
+<td align="left">2018-08-01</td>
+<td align="left">2025-01-17</td>
+<td align="right">28</td>
+<td align="right">49</td>
+<td align="right">23</td>
+<td align="right">88</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="left">john_turturro</td>
+<td align="right">85</td>
+<td align="left">2016-10-05</td>
+<td align="left">2024-07-10</td>
+<td align="right">4</td>
+<td align="right">76</td>
+<td align="right">5</td>
+<td align="right">84</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">patriciaarquette</td>
+<td align="right">48</td>
+<td align="left">2015-11-01</td>
+<td align="left">2025-01-15</td>
+<td align="right">5</td>
+<td align="right">37</td>
+<td align="right">6</td>
+<td align="right">43</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">surefineokay</td>
+<td align="right">100</td>
+<td align="left">2024-06-25</td>
+<td align="left">2025-01-17</td>
+<td align="right">33</td>
+<td align="right">28</td>
+<td align="right">39</td>
+<td align="right">61</td>
+<td align="right">39</td>
+</tr>
+<tr class="even">
+<td align="left">yuluminati</td>
+<td align="right">100</td>
+<td align="left">2024-09-18</td>
+<td align="left">2025-01-17</td>
+<td align="right">6</td>
+<td align="right">35</td>
+<td align="right">59</td>
+<td align="right">41</td>
+<td align="right">59</td>
+</tr>
+<tr class="odd">
+<td align="left">dichenlachman</td>
+<td align="right">100</td>
+<td align="left">2018-05-25</td>
+<td align="left">2025-01-17</td>
+<td align="right">1</td>
+<td align="right">56</td>
+<td align="right">43</td>
+<td align="right">89</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">mchernus</td>
+<td align="right">100</td>
+<td align="left">2020-08-29</td>
+<td align="left">2024-12-17</td>
+<td align="right">26</td>
+<td align="right">65</td>
+<td align="right">9</td>
+<td align="right">96</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">tramell.tillman</td>
+<td align="right">34</td>
+<td align="left">2018-11-02</td>
+<td align="left">2025-01-16</td>
+<td align="right">24</td>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right">29</td>
+<td align="right">5</td>
+</tr>
+</tbody>
+</table>
+<p>N.B. All posts - in Instagram API parlance, we are actually talking about <code>media</code> items - are either “feed” or “reel”, and, separately, either carousel, image, or video.</p>
+</div>
+<div id="step-5-time-to-focus-on-their-severance-posts" class="section level2">
+<h2>Step 5: Time to focus on their Severance posts</h2>
+<p>Do they post about <em>Severance</em>?</p>
+<pre class="r"><code>severance_media_df &lt;- media_df |&gt; 
+  dplyr::filter(stringr::str_detect(string = caption,
+                                    pattern = stringr::fixed(pattern = &quot;severance&quot;,
+                                                             ignore_case = TRUE)))
+
+
+usernames_ordered_df |&gt; 
+  dplyr::left_join(
+    severance_media_df |&gt; 
+      dplyr::group_by(username) |&gt; 
+      dplyr::count(name = &quot;post&quot;),
+    by = &quot;username&quot;) |&gt;
+  dplyr::left_join(y = severance_media_df |&gt; 
+                     dplyr::group_by(username) |&gt; 
+                     dplyr::summarise(earliest_post  = min(timestamp) |&gt; as.Date(),
+                                      latest_post = max(timestamp) |&gt; as.Date()),
+                   by = &quot;username&quot;) |&gt; 
+  dplyr::left_join(y = severance_media_df |&gt; 
+                     dplyr::group_by(username, media_type) |&gt; 
+                     dplyr::count() |&gt; 
+                     tidyr::pivot_wider(names_from = media_type, values_from = n), 
+                   by = &quot;username&quot;) |&gt; 
+  dplyr::left_join(y = severance_media_df |&gt; 
+                     dplyr::group_by(username, media_product_type) |&gt; 
+                     dplyr::count() |&gt; 
+                     tidyr::pivot_wider(names_from = media_product_type, values_from = n), 
+                   by = &quot;username&quot;) |&gt; 
+  
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="19%" />
+<col width="5%" />
+<col width="16%" />
+<col width="13%" />
+<col width="17%" />
+<col width="6%" />
+<col width="6%" />
+<col width="5%" />
+<col width="6%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">username</th>
+<th align="right">post</th>
+<th align="left">earliest_post</th>
+<th align="left">latest_post</th>
+<th align="right">CAROUSEL_ALBUM</th>
+<th align="right">IMAGE</th>
+<th align="right">VIDEO</th>
+<th align="right">FEED</th>
+<th align="right">REELS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">mradamscott</td>
+<td align="right">17</td>
+<td align="left">2022-07-13</td>
+<td align="left">2025-01-14</td>
+<td align="right">10</td>
+<td align="right">4</td>
+<td align="right">3</td>
+<td align="right">14</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">brittle</td>
+<td align="right">19</td>
+<td align="left">2020-01-20</td>
+<td align="left">2024-10-21</td>
+<td align="right">6</td>
+<td align="right">7</td>
+<td align="right">6</td>
+<td align="right">15</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">john_turturro</td>
+<td align="right">2</td>
+<td align="left">2022-01-19</td>
+<td align="left">2024-07-10</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">patriciaarquette</td>
+<td align="right">1</td>
+<td align="left">2025-01-15</td>
+<td align="left">2025-01-15</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">surefineokay</td>
+<td align="right">6</td>
+<td align="left">2024-07-10</td>
+<td align="left">2025-01-17</td>
+<td align="right">NA</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">yuluminati</td>
+<td align="right">2</td>
+<td align="left">2024-10-13</td>
+<td align="left">2024-11-18</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+<td align="right">2</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">dichenlachman</td>
+<td align="right">21</td>
+<td align="left">2021-12-16</td>
+<td align="left">2025-01-17</td>
+<td align="right">NA</td>
+<td align="right">8</td>
+<td align="right">13</td>
+<td align="right">18</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">mchernus</td>
+<td align="right">9</td>
+<td align="left">2022-02-25</td>
+<td align="left">2024-07-10</td>
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">8</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">tramell.tillman</td>
+<td align="right">7</td>
+<td align="left">2022-04-09</td>
+<td align="left">2024-12-18</td>
+<td align="right">6</td>
+<td align="right">NA</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<p>All of them did, at least once! Notice that we probably miss some of the earliest post by the most active Instagram users, as we retrieved only the latest 100.</p>
+<p>It appears, that every single one of the top 10 most-liked Instagram posts mentioning Severance by its cast is by <code>mradamscott</code>… such a 🌟.</p>
+<p>But for the sake of balance, let’s combine the <em>top</em> Severance posts by each actor.</p>
+<p>Click on the timestamp to see the original post.</p>
+<pre class="r"><code>severance_media_df |&gt; 
+  dplyr::group_by(username) |&gt; 
+  dplyr::arrange(dplyr::desc(like_count),
+                 dplyr::desc(comments_count)) |&gt; 
+  dplyr::slice_head(n = 1) |&gt; 
+  dplyr::ungroup() |&gt; 
+  dplyr::mutate(timestamp = purrr::map2_chr(
+    .x = as.character(as.Date(timestamp)),
+    .y = permalink, .f = \(x, y) {
+      htmltools::a(x, href = stringr::str_c(y)) |&gt; as.character()
+    })) |&gt; 
+  dplyr::select(timestamp, username, like_count, comments_count, caption) |&gt; 
+  dplyr::mutate(caption = stringr::str_trunc(string = caption, width = 24)) |&gt; 
+  dplyr::arrange(dplyr::desc(like_count),
+                 dplyr::desc(comments_count)) |&gt; 
+  dplyr::rename(like = like_count, comments = comments_count) |&gt; 
+  knitr::kable(escape = FALSE, format.args = list(big.mark = &quot; &quot;))</code></pre>
+<table>
+<colgroup>
+<col width="53%" />
+<col width="13%" />
+<col width="5%" />
+<col width="6%" />
+<col width="21%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">timestamp</th>
+<th align="left">username</th>
+<th align="right">like</th>
+<th align="right">comments</th>
+<th align="left">caption</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/p/CkYytSauDYf/">2022-10-31</a></td>
+<td align="left">mradamscott</td>
+<td align="right">74 332</td>
+<td align="right">1 374</td>
+<td align="left">Filming has begun on …</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/p/CgShChDvom_/">2022-07-21</a></td>
+<td align="left">brittle</td>
+<td align="right">14 765</td>
+<td align="right">176</td>
+<td align="left">we all went to high s…</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/p/CpLCV4_LSgj/">2023-02-27</a></td>
+<td align="left">dichenlachman</td>
+<td align="right">11 953</td>
+<td align="right">128</td>
+<td align="left">Had an wonderful time…</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/p/DE1WIJzt_O6/">2025-01-15</a></td>
+<td align="left">patriciaarquette</td>
+<td align="right">5 803</td>
+<td align="right">195</td>
+<td align="left">#severance appletv #g…</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/reel/C9PdKgAOIt3/">2024-07-10</a></td>
+<td align="left">tramell.tillman</td>
+<td align="right">2 714</td>
+<td align="right">213</td>
+<td align="left">Let the countdown beg…</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/reel/DBd76PCpFXf/">2024-10-23</a></td>
+<td align="left">surefineokay</td>
+<td align="right">1 513</td>
+<td align="right">82</td>
+<td align="left">We’re back, baby…. #S…</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/p/CpMPGqSuNlx/">2023-02-28</a></td>
+<td align="left">mchernus</td>
+<td align="right">1 212</td>
+<td align="right">91</td>
+<td align="left">Oh what a night! Had …</td>
+</tr>
+<tr class="even">
+<td align="left"><a href="https://www.instagram.com/tv/CY5Hm-Ko4-T/">2022-01-19</a></td>
+<td align="left">john_turturro</td>
+<td align="right">1 178</td>
+<td align="right">53</td>
+<td align="left">Here comes the offici…</td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="https://www.instagram.com/p/DBEa8MOJK9R/">2024-10-13</a></td>
+<td align="left">yuluminati</td>
+<td align="right">228</td>
+<td align="right">51</td>
+<td align="left">🙏🙏🙏 one of the greate…</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-6-some-data-visualisation" class="section level2">
+<h2>Step 6: Some data visualisation</h2>
+<p>This is all just preliminary data gathering and data exploration. The purpose of this post is just to show that it is possible using the official Instagram API to retrieve posts by other users, and conduct all sorts of data processing on the data thus retrieved.</p>
+<p>The reader should see how this same technique could be used for all sorts of work, from data journalism to competitor analysis. One could analyse hashtags, or pass the images to locally deployed LLMs to enrich the analysis, and ultimately, see what works best based on a set of criteria.</p>
+<p>Just for the sake of it, let’s do some visualisations, keeping in mind that in this case the data are not really fully comparable (i.e. we have only recent posts by some of the cast members).</p>
+<p><em>Severance</em> fans will appreciate the <a href="https://github.com/ivelasq/severance">colour palettes inspired by some of the most memorable scenes in the series</a>.</p>
+<pre class="r"><code>media_gg_df &lt;- media_df |&gt; 
+  dplyr::mutate(created_time = lubridate::as_date(timestamp)) |&gt; 
+  mutate(year = lubridate::year(created_time), 
+         month = lubridate::month(created_time),
+         day = lubridate::day(created_time)) |&gt; 
+  mutate(month = factor(x = month,
+                        levels = 12:1,
+                        labels = rev(month.name)
+  )) |&gt; 
+  rename(`Like` = like_count,
+         `Format` = media_type) |&gt; 
+  filter(created_time&gt;lubridate::as_datetime(&quot;2021-07-31&quot;))
+
+instagram_bubble_gg &lt;- media_gg_df |&gt; 
+  mutate(month_year = paste(month, year, sep = &quot; &quot;)) |&gt;
+  arrange(desc(created_time)) |&gt; 
+  mutate(month_year = forcats::fct_inorder(month_year)) |&gt; 
+  ggplot(mapping = aes(x = day,
+                       y = month_year,
+                       size = `Like`,
+                       colour = `Format`)) +
+  geom_point(alpha = 0.8) +
+  scale_color_manual(values = severance_palette(&quot;Jazz02&quot;)) +
+  #scale_colour_viridis_d() +
+  guides(fill = guide_legend(reverse = TRUE)) + 
+  scale_x_continuous(name = &quot;Day of the month&quot;,
+                     breaks = c(1, 5, 10, 15, 20, 25, 30),
+                     minor_breaks = c(1:31)) +
+  scale_y_discrete(&quot;&quot;) +
+  scale_size_continuous(range = c(0.1,12), labels = scales::number) +
+  guides(colour = guide_legend(override.aes = list(size=12))) +
+  theme(legend.direction = &quot;horizontal&quot;,
+        legend.position = &quot;bottom&quot;
+  ) +
+  labs(title = &quot;Type and number of likes on Instagram&quot;,
+       subtitle = paste(&quot;Out of a total of&quot;, scales::number(nrow(media_gg_df)), &quot;posts published by&quot;, sQuote(&quot;Severance&quot;),  &quot;actors starting with&quot;, lubridate::date(media_gg_df$created_time) |&gt; min() |&gt; format(&quot;%B %Y&quot;) |&gt; stringr::str_squish())) +
+  theme(strip.text = element_text(size = 20),
+        legend.box=&quot;vertical&quot;, 
+        legend.margin=margin())
+
+
+ggplot2::ggsave(filename = &quot;instagram_bubble_gg.png&quot;,
+                plot = instagram_bubble_gg,
+                width = 8,
+                height = 10,
+                bg = &quot;white&quot;)</code></pre>
+<p><img src="instagram_bubble_gg.png" style="width:100.0%" /></p>
+<p>It’s easy to notice something unexpected: the biggest hits are carousel albums, not video. If this was a serious analysis, then one would go on and investigate why these posts works, or why the video clips are not hits, or…</p>
+<p>One final note: folks interested in analysis of their own Instagram channel (or, for that matter, Facebook page) may want to consider how the official APIs give a lot more data about your own posts, enabling much more revealing analyses, including e.g. (and even without mentioning all the fine-grained options) change in number of average video views for organic posts across time (easy to highlight with changepoint algorithms), comparison of sponsored over organic posts, the success of specific types of posts based on their caption contents, or timing of the day when they have been posted, etc.</p>
+<p>P.S. this post has served as the basis for <a href="https://roxanatodea.com/">a note on Roxana Todea’s website</a>.</p>
+</div>

@@ -1,6 +1,6 @@
 ---
 title: 'Explore the Instagram API based on the cast of "Severance"'
-date: '2025-01-18'
+date: '2025-01-19'
 categories:
   - Data notes
 tags:
@@ -160,7 +160,7 @@ media_df <- purrr::map(
     if (fs::file_exists(current_filename)==FALSE) {
       current_media_df <- cc_get_instagram_bd_user_media(
         ig_username = current_username,
-        max_pages = 4 # 4 pages, as each page has 25 posts
+        max_pages = 10 # 4 pages, as each page has 25 posts
       )
       # dropping thumbnail and media url, as they are attached to my user and anyway stop working soon
       readr::write_csv(x = current_media_df |> 
@@ -178,7 +178,7 @@ media_df <- purrr::map(
 
 ## Step 4: check out what they post
 
-So here we are, with about 100 posts per user, or much less for those who post infrequently. As you see, retrieving 100 posts lets us go back in time just a couple of months for a couple of users, but all the way back to 2015 for others!
+So here we are, with about 250 posts per user, or much less for those who post infrequently. Retrieving 250 posts lets us go back in time less than a year for a few users, but all the way back to 2011 and their earliest post for others! In order to go back at least to the launch of the first season of *Severance* in early 2022, we'll get a few more hundreds of posts for the most active accounts.
 
 ```{r}
 usernames_ordered_df <- cast_ig_df |> 
@@ -305,7 +305,7 @@ media_gg_df <- media_df |>
   )) |> 
   rename(`Like` = like_count,
          `Format` = media_type) |> 
-  filter(created_time>lubridate::as_datetime("2021-07-31"))
+  filter(created_time>=lubridate::as_datetime("2022-01-01"))
 
 instagram_bubble_gg <- media_gg_df |> 
   mutate(month_year = paste(month, year, sep = " ")) |>
@@ -322,7 +322,7 @@ instagram_bubble_gg <- media_gg_df |>
   scale_x_continuous(name = "Day of the month",
                      breaks = c(1, 5, 10, 15, 20, 25, 30),
                      minor_breaks = c(1:31)) +
-  scale_y_discrete("") +
+  scale_y_discrete(name = NULL, expand = expansion(add = 1)) +
   scale_size_continuous(range = c(0.1,12), labels = scales::number) +
   guides(colour = guide_legend(override.aes = list(size=12))) +
   theme(legend.direction = "horizontal",

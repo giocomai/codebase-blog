@@ -272,7 +272,7 @@ media_df &lt;- purrr::map(
     if (fs::file_exists(current_filename)==FALSE) {
       current_media_df &lt;- cc_get_instagram_bd_user_media(
         ig_username = current_username,
-        max_pages = 4 # 4 pages, as each page has 25 posts
+        max_pages = 10 # 4 pages, as each page has 25 posts
       )
       # dropping thumbnail and media url, as they are attached to my user and anyway stop working soon
       readr::write_csv(x = current_media_df |&gt; 
@@ -287,7 +287,7 @@ media_df &lt;- purrr::map(
 </div>
 <div id="step-4-check-out-what-they-post" class="section level2">
 <h2>Step 4: check out what they post</h2>
-<p>So here we are, with about 100 posts per user, or much less for those who post infrequently. As you see, retrieving 100 posts lets us go back in time just a couple of months for a couple of users, but all the way back to 2015 for others!</p>
+<p>So here we are, with about 250 posts per user, or much less for those who post infrequently. As you see, retrieving 250 posts lets us go back in time less than a year for a few users, but all the way back to 2011 their earlier post for others!</p>
 <pre class="r"><code>usernames_ordered_df &lt;- cast_ig_df |&gt; 
   dplyr::select(username)
 
@@ -342,24 +342,24 @@ usernames_ordered_df |&gt;
 <tbody>
 <tr class="odd">
 <td align="left">mradamscott</td>
-<td align="right">100</td>
-<td align="left">2022-07-02</td>
+<td align="right">250</td>
+<td align="left">2020-06-28</td>
 <td align="left">2025-01-14</td>
-<td align="right">51</td>
-<td align="right">42</td>
-<td align="right">7</td>
-<td align="right">93</td>
+<td align="right">77</td>
+<td align="right">141</td>
+<td align="right">32</td>
+<td align="right">243</td>
 <td align="right">7</td>
 </tr>
 <tr class="even">
 <td align="left">brittle</td>
-<td align="right">100</td>
-<td align="left">2018-08-01</td>
+<td align="right">159</td>
+<td align="left">2011-10-23</td>
 <td align="left">2025-01-17</td>
-<td align="right">28</td>
-<td align="right">49</td>
-<td align="right">23</td>
-<td align="right">88</td>
+<td align="right">29</td>
+<td align="right">103</td>
+<td align="right">27</td>
+<td align="right">147</td>
 <td align="right">12</td>
 </tr>
 <tr class="odd">
@@ -386,46 +386,46 @@ usernames_ordered_df |&gt;
 </tr>
 <tr class="odd">
 <td align="left">surefineokay</td>
-<td align="right">100</td>
-<td align="left">2024-06-25</td>
-<td align="left">2025-01-17</td>
-<td align="right">33</td>
-<td align="right">28</td>
-<td align="right">39</td>
-<td align="right">61</td>
-<td align="right">39</td>
+<td align="right">250</td>
+<td align="left">2023-08-01</td>
+<td align="left">2025-01-18</td>
+<td align="right">82</td>
+<td align="right">60</td>
+<td align="right">108</td>
+<td align="right">144</td>
+<td align="right">106</td>
 </tr>
 <tr class="even">
 <td align="left">yuluminati</td>
-<td align="right">100</td>
-<td align="left">2024-09-18</td>
-<td align="left">2025-01-17</td>
-<td align="right">6</td>
-<td align="right">35</td>
-<td align="right">59</td>
-<td align="right">41</td>
-<td align="right">59</td>
+<td align="right">250</td>
+<td align="left">2024-03-21</td>
+<td align="left">2025-01-18</td>
+<td align="right">31</td>
+<td align="right">90</td>
+<td align="right">129</td>
+<td align="right">121</td>
+<td align="right">129</td>
 </tr>
 <tr class="odd">
 <td align="left">dichenlachman</td>
-<td align="right">100</td>
-<td align="left">2018-05-25</td>
+<td align="right">194</td>
+<td align="left">2013-04-05</td>
 <td align="left">2025-01-17</td>
-<td align="right">1</td>
-<td align="right">56</td>
-<td align="right">43</td>
-<td align="right">89</td>
+<td align="right">2</td>
+<td align="right">132</td>
+<td align="right">60</td>
+<td align="right">183</td>
 <td align="right">11</td>
 </tr>
 <tr class="even">
 <td align="left">mchernus</td>
-<td align="right">100</td>
-<td align="left">2020-08-29</td>
+<td align="right">250</td>
+<td align="left">2018-04-29</td>
 <td align="left">2024-12-17</td>
-<td align="right">26</td>
-<td align="right">65</td>
-<td align="right">9</td>
-<td align="right">96</td>
+<td align="right">46</td>
+<td align="right">188</td>
+<td align="right">16</td>
+<td align="right">246</td>
 <td align="right">4</td>
 </tr>
 <tr class="odd">
@@ -503,13 +503,13 @@ usernames_ordered_df |&gt;
 <tbody>
 <tr class="odd">
 <td align="left">mradamscott</td>
-<td align="right">17</td>
-<td align="left">2022-07-13</td>
+<td align="right">51</td>
+<td align="left">2021-11-20</td>
 <td align="left">2025-01-14</td>
+<td align="right">23</td>
+<td align="right">18</td>
 <td align="right">10</td>
-<td align="right">4</td>
-<td align="right">3</td>
-<td align="right">14</td>
+<td align="right">48</td>
 <td align="right">3</td>
 </tr>
 <tr class="even">
@@ -547,25 +547,25 @@ usernames_ordered_df |&gt;
 </tr>
 <tr class="odd">
 <td align="left">surefineokay</td>
-<td align="right">6</td>
-<td align="left">2024-07-10</td>
+<td align="right">7</td>
+<td align="left">2024-06-10</td>
 <td align="left">2025-01-17</td>
 <td align="right">NA</td>
+<td align="right">4</td>
 <td align="right">3</td>
-<td align="right">3</td>
-<td align="right">3</td>
+<td align="right">4</td>
 <td align="right">3</td>
 </tr>
 <tr class="even">
 <td align="left">yuluminati</td>
-<td align="right">2</td>
-<td align="left">2024-10-13</td>
-<td align="left">2024-11-18</td>
+<td align="right">7</td>
+<td align="left">2024-04-28</td>
+<td align="left">2025-01-18</td>
 <td align="right">1</td>
-<td align="right">1</td>
-<td align="right">NA</td>
+<td align="right">4</td>
 <td align="right">2</td>
-<td align="right">NA</td>
+<td align="right">5</td>
+<td align="right">2</td>
 </tr>
 <tr class="odd">
 <td align="left">dichenlachman</td>
@@ -644,35 +644,35 @@ usernames_ordered_df |&gt;
 <tr class="odd">
 <td align="left"><a href="https://www.instagram.com/p/CkYytSauDYf/">2022-10-31</a></td>
 <td align="left">mradamscott</td>
-<td align="right">74 332</td>
+<td align="right">74 336</td>
 <td align="right">1 374</td>
 <td align="left">Filming has begun on …</td>
 </tr>
 <tr class="even">
 <td align="left"><a href="https://www.instagram.com/p/CgShChDvom_/">2022-07-21</a></td>
 <td align="left">brittle</td>
-<td align="right">14 765</td>
+<td align="right">14 767</td>
 <td align="right">176</td>
 <td align="left">we all went to high s…</td>
 </tr>
 <tr class="odd">
 <td align="left"><a href="https://www.instagram.com/p/CpLCV4_LSgj/">2023-02-27</a></td>
 <td align="left">dichenlachman</td>
-<td align="right">11 953</td>
+<td align="right">11 955</td>
 <td align="right">128</td>
 <td align="left">Had an wonderful time…</td>
 </tr>
 <tr class="even">
 <td align="left"><a href="https://www.instagram.com/p/DE1WIJzt_O6/">2025-01-15</a></td>
 <td align="left">patriciaarquette</td>
-<td align="right">5 803</td>
-<td align="right">195</td>
+<td align="right">5 846</td>
+<td align="right">196</td>
 <td align="left">#severance appletv #g…</td>
 </tr>
 <tr class="odd">
 <td align="left"><a href="https://www.instagram.com/reel/C9PdKgAOIt3/">2024-07-10</a></td>
 <td align="left">tramell.tillman</td>
-<td align="right">2 714</td>
+<td align="right">2 716</td>
 <td align="right">213</td>
 <td align="left">Let the countdown beg…</td>
 </tr>
@@ -698,11 +698,11 @@ usernames_ordered_df |&gt;
 <td align="left">Here comes the offici…</td>
 </tr>
 <tr class="odd">
-<td align="left"><a href="https://www.instagram.com/p/DBEa8MOJK9R/">2024-10-13</a></td>
+<td align="left"><a href="https://www.instagram.com/p/C8cyYWFpEqM/">2024-06-20</a></td>
 <td align="left">yuluminati</td>
-<td align="right">228</td>
-<td align="right">51</td>
-<td align="left">🙏🙏🙏 one of the greate…</td>
+<td align="right">355</td>
+<td align="right">24</td>
+<td align="left">Had a great time 🙏🙏🙏 …</td>
 </tr>
 </tbody>
 </table>
@@ -724,7 +724,7 @@ usernames_ordered_df |&gt;
   )) |&gt; 
   rename(`Like` = like_count,
          `Format` = media_type) |&gt; 
-  filter(created_time&gt;lubridate::as_datetime(&quot;2021-07-31&quot;))
+  filter(created_time&gt;=lubridate::as_datetime(&quot;2022-01-01&quot;))
 
 instagram_bubble_gg &lt;- media_gg_df |&gt; 
   mutate(month_year = paste(month, year, sep = &quot; &quot;)) |&gt;

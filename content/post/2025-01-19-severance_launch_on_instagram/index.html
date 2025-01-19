@@ -1,6 +1,6 @@
 ---
 title: 'Explore the Instagram API based on the cast of "Severance"'
-date: '2025-01-18'
+date: '2025-01-19'
 categories:
   - Data notes
 tags:
@@ -287,7 +287,7 @@ media_df &lt;- purrr::map(
 </div>
 <div id="step-4-check-out-what-they-post" class="section level2">
 <h2>Step 4: check out what they post</h2>
-<p>So here we are, with about 250 posts per user, or much less for those who post infrequently. As you see, retrieving 250 posts lets us go back in time less than a year for a few users, but all the way back to 2011 their earlier post for others!</p>
+<p>So here we are, with about 250 posts per user, or much less for those who post infrequently. Retrieving 250 posts lets us go back in time less than a year for a few users, but all the way back to 2011 and their earliest post for others! In order to go back at least to the launch of the first season of <em>Severance</em> in early 2022, we’ll get a few more hundreds of posts for the most active accounts.</p>
 <pre class="r"><code>usernames_ordered_df &lt;- cast_ig_df |&gt; 
   dplyr::select(username)
 
@@ -386,25 +386,25 @@ usernames_ordered_df |&gt;
 </tr>
 <tr class="odd">
 <td align="left">surefineokay</td>
-<td align="right">250</td>
-<td align="left">2023-08-01</td>
+<td align="right">1000</td>
+<td align="left">2020-06-24</td>
 <td align="left">2025-01-18</td>
-<td align="right">82</td>
-<td align="right">60</td>
-<td align="right">108</td>
-<td align="right">144</td>
-<td align="right">106</td>
+<td align="right">262</td>
+<td align="right">398</td>
+<td align="right">340</td>
+<td align="right">770</td>
+<td align="right">230</td>
 </tr>
 <tr class="even">
 <td align="left">yuluminati</td>
-<td align="right">250</td>
-<td align="left">2024-03-21</td>
+<td align="right">1525</td>
+<td align="left">2018-05-12</td>
 <td align="left">2025-01-18</td>
-<td align="right">31</td>
-<td align="right">90</td>
-<td align="right">129</td>
-<td align="right">121</td>
-<td align="right">129</td>
+<td align="right">64</td>
+<td align="right">1037</td>
+<td align="right">424</td>
+<td align="right">1292</td>
+<td align="right">233</td>
 </tr>
 <tr class="odd">
 <td align="left">dichenlachman</td>
@@ -547,25 +547,25 @@ usernames_ordered_df |&gt;
 </tr>
 <tr class="odd">
 <td align="left">surefineokay</td>
-<td align="right">7</td>
-<td align="left">2024-06-10</td>
+<td align="right">46</td>
+<td align="left">2021-12-16</td>
 <td align="left">2025-01-17</td>
-<td align="right">NA</td>
-<td align="right">4</td>
-<td align="right">3</td>
-<td align="right">4</td>
-<td align="right">3</td>
+<td align="right">21</td>
+<td align="right">9</td>
+<td align="right">16</td>
+<td align="right">40</td>
+<td align="right">6</td>
 </tr>
 <tr class="even">
 <td align="left">yuluminati</td>
-<td align="right">7</td>
-<td align="left">2024-04-28</td>
+<td align="right">23</td>
+<td align="left">2022-01-18</td>
 <td align="left">2025-01-18</td>
 <td align="right">1</td>
-<td align="right">4</td>
-<td align="right">2</td>
+<td align="right">13</td>
+<td align="right">9</td>
+<td align="right">18</td>
 <td align="right">5</td>
-<td align="right">2</td>
 </tr>
 <tr class="odd">
 <td align="left">dichenlachman</td>
@@ -625,11 +625,11 @@ usernames_ordered_df |&gt;
   knitr::kable(escape = FALSE, format.args = list(big.mark = &quot; &quot;))</code></pre>
 <table>
 <colgroup>
-<col width="53%" />
+<col width="54%" />
 <col width="13%" />
 <col width="5%" />
-<col width="6%" />
-<col width="21%" />
+<col width="7%" />
+<col width="19%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -677,11 +677,11 @@ usernames_ordered_df |&gt;
 <td align="left">Let the countdown beg…</td>
 </tr>
 <tr class="even">
-<td align="left"><a href="https://www.instagram.com/reel/DBd76PCpFXf/">2024-10-23</a></td>
+<td align="left"><a href="https://www.instagram.com/p/Cnd_3f3uNFw/">2023-01-16</a></td>
 <td align="left">surefineokay</td>
-<td align="right">1 513</td>
-<td align="right">82</td>
-<td align="left">We’re back, baby…. #S…</td>
+<td align="right">1 982</td>
+<td align="right">140</td>
+<td align="left">Thank you Critics Cho…</td>
 </tr>
 <tr class="odd">
 <td align="left"><a href="https://www.instagram.com/p/CpMPGqSuNlx/">2023-02-28</a></td>
@@ -698,11 +698,11 @@ usernames_ordered_df |&gt;
 <td align="left">Here comes the offici…</td>
 </tr>
 <tr class="odd">
-<td align="left"><a href="https://www.instagram.com/p/C8cyYWFpEqM/">2024-06-20</a></td>
+<td align="left"><a href="https://www.instagram.com/p/CaG62brOwSC/">2022-02-18</a></td>
 <td align="left">yuluminati</td>
-<td align="right">355</td>
-<td align="right">24</td>
-<td align="left">Had a great time 🙏🙏🙏 …</td>
+<td align="right">592</td>
+<td align="right">108</td>
+<td align="left">Severance is here!! S…</td>
 </tr>
 </tbody>
 </table>
@@ -741,7 +741,7 @@ instagram_bubble_gg &lt;- media_gg_df |&gt;
   scale_x_continuous(name = &quot;Day of the month&quot;,
                      breaks = c(1, 5, 10, 15, 20, 25, 30),
                      minor_breaks = c(1:31)) +
-  scale_y_discrete(&quot;&quot;) +
+  scale_y_discrete(name = NULL, expand = expansion(add = 1)) +
   scale_size_continuous(range = c(0.1,12), labels = scales::number) +
   guides(colour = guide_legend(override.aes = list(size=12))) +
   theme(legend.direction = &quot;horizontal&quot;,

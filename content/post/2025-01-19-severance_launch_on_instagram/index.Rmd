@@ -349,5 +349,5 @@ It's easy to notice something unexpected: the biggest hits are carousel albums, 
 
 One final note: folks interested in analysis of their own Instagram channel (or, for that matter, Facebook page) may want to consider how the official APIs give a lot more data about your own posts, enabling much more revealing analyses, including e.g. (and even without mentioning all the fine-grained options) change in number of average video views for organic posts across time (easy to highlight with changepoint algorithms), comparison of sponsored over organic posts, the success of specific types of posts based on their caption contents, or timing of the day when they have been posted, etc. 
 
-P.S. this post has served as the basis for [a note on Roxana Todea's website](https://roxanatodea.com/).
+P.S. this post has served as the basis for [a note on Roxana Todea's website](https://roxanatodea.com/appunti/instagram-competitor-severance/).
 
